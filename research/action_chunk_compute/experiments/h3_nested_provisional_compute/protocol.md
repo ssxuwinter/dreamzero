@@ -9,9 +9,12 @@
 ## 核心设计
 
 - 在完整 16-step scheduler 轨迹中记录每个实际 DiT 调用后的 provisional normalized action、action flow 和 video flow 摘要。
+- 主因果回放固定为 prefix-stop：对 `k=1..16`，前 `k` 个 action flow 与 full-16 完全相同，之后不再调用 DiT，而是复用第 `k` 个 flow 完成剩余 scheduler 积分。
+- prefix-stop 输出由一次 full-16 trace 离线重放得到；初始 action noise、前 `k` 次模型状态和 scheduler 配置完全配对。`k=16` 必须与服务正常 final action 数值一致。
 - 每个候选停止点 `s` 的真实收益定义为：从同一个 `x_s` 继续运行到完整轨迹后，动作误差相对在 `s` 停止/复用 flow 的改善。
 - 所有 gate 特征必须在停止点 `s` 已经可用；不得使用最终动作、未来 flow、GT phase 或未来图像。
 - 记录 action update norm、相邻 provisional action cosine/L1、预测夹爪事件稳定性、action-flow cosine、video-flow cosine，以及前一最终 chunk 的 transition 特征。
+- 主检查点为 `k={2,4,8}`，其余 `k` 用于绘制完整 quality-compute 曲线；收益阈值沿用 H2 的 `{0, 0.002, 0.005}`。
 
 ## 比较策略
 
