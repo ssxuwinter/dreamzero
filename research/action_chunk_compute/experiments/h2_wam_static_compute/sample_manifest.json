@@ -1,0 +1,30 @@
+{
+  "name": "diagnostic_contiguous_12",
+  "created_at": "2026-07-19",
+  "selection_source": "h1_gt_chunk_phase/results/confirmatory_1200/chunks.parquet",
+  "selection_rule": "episode 0 之外，恰有 7 个可评估连续 chunk 且覆盖全部五个夹爪阶段；从不同任务和数据 chunk 中确定性选择 12 条轨迹",
+  "confirmatory": false,
+  "reason": "阶段富集诊断集，用于检查连续阶段边界和静态 schedule compute proxy；不能代表 DROID 自然阶段分布",
+  "frame_offsets": [-23, -16, -8, 0],
+  "action_horizon": 24,
+  "schedules": {
+    "5": {"port": 8105, "gpu_pair": [0, 1], "mask": [0, 1, 2, 7, 12]},
+    "8": {"port": 8108, "gpu_pair": [2, 3], "mask": [0, 1, 2, 6, 10, 13, 14, 15]},
+    "16": {"port": 8116, "gpu_pair": [4, 5], "mask": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]}
+  },
+  "episodes": [
+    {"episode": 1925, "length": 204, "prompt": "Move the sachets from the plate to the cup in the middle"},
+    {"episode": 2528, "length": 212, "prompt": "Place the wooden spatula in the silver holder"},
+    {"episode": 3840, "length": 211, "prompt": "Move two right blocks to the left"},
+    {"episode": 7814, "length": 200, "prompt": "Put the seal tape in the box"},
+    {"episode": 14688, "length": 205, "prompt": "Remove the lid from the black pot and place it on the blue pot"},
+    {"episode": 16001, "length": 207, "prompt": "Pick up the black remote and place it on the red bowl"},
+    {"episode": 21370, "length": 191, "prompt": "Put the orange and yellow plastic cup on the top shelf of the cabinet"},
+    {"episode": 22235, "length": 206, "prompt": "Pick up the green sprite can from the clear bowl and place it on the kitchen counter"},
+    {"episode": 28198, "length": 213, "prompt": "Put the cup inside the sink"},
+    {"episode": 36870, "length": 197, "prompt": "Remove the clear lid from the black lunchbox and put it on the counter"},
+    {"episode": 46492, "length": 214, "prompt": "Put the rope in the groove on the black object"},
+    {"episode": 50458, "length": 196, "prompt": "Take the marker out of the cup and put it on the table"}
+  ]
+}
+

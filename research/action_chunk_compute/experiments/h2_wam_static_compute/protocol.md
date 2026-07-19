@@ -28,9 +28,17 @@
 - 主误差：q99 range 归一化、未裁剪的 joint MAE H8；gripper H8 单独报告。
 - 次误差：H24 joint/gripper、P95、阶段分组误差。
 - 允许非单调：`E_best = min(E5,E8,E16)`；对每个 tolerance 求最低可接受 call 数。
+- tolerance 在查看确认集结果前固定为 q99-normalized joint MAE H8 的 `{0, 0.002, 0.005}`；连续 `E_low-E_high` 是主分析，阈值分类是次分析。
 - 探索性 compute proxy：`benefit_5_to_16 = E5 - E16`、`benefit_8_to_16 = E8 - E16`。
 - 特征只来自低预算或前一 chunk 的 WAM 输出，不能使用高预算输出构造 gate 输入。
 - 评估 episode-held-out 的 Spearman、AUROC（benefit > tolerance）与简单回归；报告 episode bootstrap CI。
+
+## 时间分段分析
+
+- 每个 episode 保留连续相邻 chunk，绘制/报告 `free_open -> pre_close -> closing -> hold -> release` 的特征和 compute benefit 轨迹。
+- `current-final` 特征用于检验阶段可识别性及下一 chunk 的 lagged 调度；`current-low-budget` 特征仅作为静态 compute proxy。
+- 不能用当前 chunk 的最终 8/16-call 输出声称节省了当前 chunk；同次请求结论仍须 H3 provisional-action 实验。
+
 
 ## 基线
 
@@ -44,4 +52,3 @@
 - 若更多静态调用没有形成稳定收益子集，则 H3 得到支持，停止把物理阶段当作多算依据。
 - 若存在收益异质性但动作特征无法 held-out 预测，则不实现 action-aware gate。
 - 即使静态 proxy 可预测，也必须进入 H3 nested 实验才能作当前请求动态早停结论。
-
