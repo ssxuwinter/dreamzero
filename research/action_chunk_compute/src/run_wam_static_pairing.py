@@ -24,9 +24,9 @@ from eval_utils.policy_client import WebsocketClientPolicy
 
 
 CAMERAS = {
-    "observation/exterior_image_0_left": "exterior_image_1_left",
-    "observation/exterior_image_1_left": "exterior_image_2_left",
-    "observation/wrist_image_left": "wrist_image_left",
+    "observation/exterior_image_0_left": "observation.images.exterior_image_1_left",
+    "observation/exterior_image_1_left": "observation.images.exterior_image_2_left",
+    "observation/wrist_image_left": "observation.images.wrist_image_left",
 }
 FRAME_OFFSETS = [-23, -16, -8, 0]
 SCHEDULE_PORTS = {5: 8105, 8: 8108, 16: 8116}
