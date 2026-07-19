@@ -1,0 +1,58 @@
+project: action_chunk_compute
+title: 从 WAM chunk 间动作信号识别精细操作并预测额外计算收益
+created_at: 2026-07-19
+updated_at: 2026-07-19
+status: active
+goal:
+  question: >-
+    能否从 WAM 输出动作中识别机器人已进入精细操作阶段，并利用该信号决定
+    当前推理是否值得继续执行更多 DiT 计算？
+  success_condition: >-
+    在 episode-held-out 评估上验证阶段信号，并证明该信号或同次推理可得的
+    provisional-action 信号可以预测真实额外计算收益，最终形成中文结论与可复现实验产物。
+scope:
+  repository: /home/admin/workspace/aop_lab/app_source/mywork/dreamzero
+  checkpoint: /home/admin/.cache/DreamZero-DROID
+  dataset: /home/admin/.cache/DreamZero-DROID-Data
+  action_contract: [24, 8]
+  action_fields: 7 个绝对关节目标 + 1 个夹爪目标
+  primary_horizon: 8
+  secondary_horizon: 24
+research_questions:
+  - id: RQ1
+    question: chunk 内及 chunk 间动作特征能否识别自由移动、接近闭合、闭合、保持和释放阶段？
+  - id: RQ2
+    question: 这些动作特征能否预测从低预算继续计算到高预算带来的动作误差改善？
+  - id: RQ3
+    question: action-flow 或 provisional action 的收敛信号是否比最终动作几何更适合同次推理早停？
+hypotheses:
+  - id: H1
+    statement: 预测夹爪事件可识别交互阶段，chunk 间变化在其基础上对 pre-close 阶段有增量信息。
+    status: testing
+  - id: H2
+    statement: 单纯的关节幅度、速度、加速度或 jerk 与精细操作难度不存在稳定正单调关系。
+    status: testing
+  - id: H3
+    statement: 语义交互阶段本身不足以预测额外 DiT 计算收益。
+    status: testing
+  - id: H4
+    statement: 同次去噪轨迹中的 provisional-action 收敛量比物理动作幅度更能预测继续计算收益。
+    status: pending
+decision_gates:
+  phase_signal: >-
+    episode 分组交叉验证中，joint+predicted-gripper+transition 相对
+    predicted-gripper-only 的 AUROC 或 AUPRC 有稳定增量，且 bootstrap 置信区间不只由单个 episode 驱动。
+  compute_signal: >-
+    特征对配对的额外计算收益具有 held-out 预测力，并在相同平均 DiT 调用量下优于随机、固定预算和 video-only 基线。
+  deployment: >-
+    仅当真实 nested run/skip 回放平均减少至少 20% DiT 调用，且 H8 主误差均值退化不超过 2%、
+    P95 与 contact-proxy 子集退化不超过 5% 时，才建议接入在线 gate。
+artifacts:
+  literature: literature/survey.md
+  log: research-log.md
+  findings: findings.md
+  gt_protocol: experiments/h1_gt_chunk_phase/protocol.md
+  static_protocol: experiments/h2_wam_static_compute/protocol.md
+  nested_protocol: experiments/h3_nested_provisional_compute/protocol.md
+next_action: 实现并运行多 episode GT chunk 间阶段代理与动作几何分析
+
