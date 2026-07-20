@@ -1,0 +1,486 @@
+{
+  "version": "1.0.0",
+  "installedAt": "2026-07-19T02:09:01.100Z",
+  "skills": [
+    {
+      "category": "01-model-architecture",
+      "skill": "litgpt",
+      "standalone": false
+    },
+    {
+      "category": "01-model-architecture",
+      "skill": "mamba",
+      "standalone": false
+    },
+    {
+      "category": "01-model-architecture",
+      "skill": "nanogpt",
+      "standalone": false
+    },
+    {
+      "category": "01-model-architecture",
+      "skill": "rwkv",
+      "standalone": false
+    },
+    {
+      "category": "01-model-architecture",
+      "skill": "torchtitan",
+      "standalone": false
+    },
+    {
+      "category": "02-tokenization",
+      "skill": "huggingface-tokenizers",
+      "standalone": false
+    },
+    {
+      "category": "02-tokenization",
+      "skill": "sentencepiece",
+      "standalone": false
+    },
+    {
+      "category": "03-fine-tuning",
+      "skill": "axolotl",
+      "standalone": false
+    },
+    {
+      "category": "03-fine-tuning",
+      "skill": "llama-factory",
+      "standalone": false
+    },
+    {
+      "category": "03-fine-tuning",
+      "skill": "peft",
+      "standalone": false
+    },
+    {
+      "category": "03-fine-tuning",
+      "skill": "unsloth",
+      "standalone": false
+    },
+    {
+      "category": "04-mechanistic-interpretability",
+      "skill": "nnsight",
+      "standalone": false
+    },
+    {
+      "category": "04-mechanistic-interpretability",
+      "skill": "pyvene",
+      "standalone": false
+    },
+    {
+      "category": "04-mechanistic-interpretability",
+      "skill": "saelens",
+      "standalone": false
+    },
+    {
+      "category": "04-mechanistic-interpretability",
+      "skill": "transformer-lens",
+      "standalone": false
+    },
+    {
+      "category": "05-data-processing",
+      "skill": "nemo-curator",
+      "standalone": false
+    },
+    {
+      "category": "05-data-processing",
+      "skill": "ray-data",
+      "standalone": false
+    },
+    {
+      "category": "06-post-training",
+      "skill": "grpo-rl-training",
+      "standalone": false
+    },
+    {
+      "category": "06-post-training",
+      "skill": "miles",
+      "standalone": false
+    },
+    {
+      "category": "06-post-training",
+      "skill": "openrlhf",
+      "standalone": false
+    },
+    {
+      "category": "06-post-training",
+      "skill": "simpo",
+      "standalone": false
+    },
+    {
+      "category": "06-post-training",
+      "skill": "slime",
+      "standalone": false
+    },
+    {
+      "category": "06-post-training",
+      "skill": "torchforge",
+      "standalone": false
+    },
+    {
+      "category": "06-post-training",
+      "skill": "trl-fine-tuning",
+      "standalone": false
+    },
+    {
+      "category": "06-post-training",
+      "skill": "verl",
+      "standalone": false
+    },
+    {
+      "category": "07-safety-alignment",
+      "skill": "constitutional-ai",
+      "standalone": false
+    },
+    {
+      "category": "07-safety-alignment",
+      "skill": "llamaguard",
+      "standalone": false
+    },
+    {
+      "category": "07-safety-alignment",
+      "skill": "nemo-guardrails",
+      "standalone": false
+    },
+    {
+      "category": "07-safety-alignment",
+      "skill": "prompt-guard",
+      "standalone": false
+    },
+    {
+      "category": "08-distributed-training",
+      "skill": "accelerate",
+      "standalone": false
+    },
+    {
+      "category": "08-distributed-training",
+      "skill": "deepspeed",
+      "standalone": false
+    },
+    {
+      "category": "08-distributed-training",
+      "skill": "megatron-core",
+      "standalone": false
+    },
+    {
+      "category": "08-distributed-training",
+      "skill": "pytorch-fsdp2",
+      "standalone": false
+    },
+    {
+      "category": "08-distributed-training",
+      "skill": "pytorch-lightning",
+      "standalone": false
+    },
+    {
+      "category": "08-distributed-training",
+      "skill": "ray-train",
+      "standalone": false
+    },
+    {
+      "category": "09-infrastructure",
+      "skill": "lambda-labs",
+      "standalone": false
+    },
+    {
+      "category": "09-infrastructure",
+      "skill": "modal",
+      "standalone": false
+    },
+    {
+      "category": "09-infrastructure",
+      "skill": "skypilot",
+      "standalone": false
+    },
+    {
+      "category": "10-optimization",
+      "skill": "awq",
+      "standalone": false
+    },
+    {
+      "category": "10-optimization",
+      "skill": "bitsandbytes",
+      "standalone": false
+    },
+    {
+      "category": "10-optimization",
+      "skill": "flash-attention",
+      "standalone": false
+    },
+    {
+      "category": "10-optimization",
+      "skill": "gguf",
+      "standalone": false
+    },
+    {
+      "category": "10-optimization",
+      "skill": "gptq",
+      "standalone": false
+    },
+    {
+      "category": "10-optimization",
+      "skill": "hqq",
+      "standalone": false
+    },
+    {
+      "category": "10-optimization",
+      "skill": "ml-training-recipes",
+      "standalone": false
+    },
+    {
+      "category": "11-evaluation",
+      "skill": "bigcode-evaluation-harness",
+      "standalone": false
+    },
+    {
+      "category": "11-evaluation",
+      "skill": "lm-evaluation-harness",
+      "standalone": false
+    },
+    {
+      "category": "11-evaluation",
+      "skill": "nemo-evaluator",
+      "standalone": false
+    },
+    {
+      "category": "12-inference-serving",
+      "skill": "llama-cpp",
+      "standalone": false
+    },
+    {
+      "category": "12-inference-serving",
+      "skill": "sglang",
+      "standalone": false
+    },
+    {
+      "category": "12-inference-serving",
+      "skill": "tensorrt-llm",
+      "standalone": false
+    },
+    {
+      "category": "12-inference-serving",
+      "skill": "vllm",
+      "standalone": false
+    },
+    {
+      "category": "13-mlops",
+      "skill": "mlflow",
+      "standalone": false
+    },
+    {
+      "category": "13-mlops",
+      "skill": "swanlab",
+      "standalone": false
+    },
+    {
+      "category": "13-mlops",
+      "skill": "tensorboard",
+      "standalone": false
+    },
+    {
+      "category": "13-mlops",
+      "skill": "weights-and-biases",
+      "standalone": false
+    },
+    {
+      "category": "14-agents",
+      "skill": "a-evolve",
+      "standalone": false
+    },
+    {
+      "category": "14-agents",
+      "skill": "autogpt",
+      "standalone": false
+    },
+    {
+      "category": "14-agents",
+      "skill": "crewai",
+      "standalone": false
+    },
+    {
+      "category": "14-agents",
+      "skill": "langchain",
+      "standalone": false
+    },
+    {
+      "category": "14-agents",
+      "skill": "llamaindex",
+      "standalone": false
+    },
+    {
+      "category": "15-rag",
+      "skill": "chroma",
+      "standalone": false
+    },
+    {
+      "category": "15-rag",
+      "skill": "faiss",
+      "standalone": false
+    },
+    {
+      "category": "15-rag",
+      "skill": "pinecone",
+      "standalone": false
+    },
+    {
+      "category": "15-rag",
+      "skill": "qdrant",
+      "standalone": false
+    },
+    {
+      "category": "15-rag",
+      "skill": "sentence-transformers",
+      "standalone": false
+    },
+    {
+      "category": "16-prompt-engineering",
+      "skill": "dspy",
+      "standalone": false
+    },
+    {
+      "category": "16-prompt-engineering",
+      "skill": "guidance",
+      "standalone": false
+    },
+    {
+      "category": "16-prompt-engineering",
+      "skill": "instructor",
+      "standalone": false
+    },
+    {
+      "category": "16-prompt-engineering",
+      "skill": "outlines",
+      "standalone": false
+    },
+    {
+      "category": "17-observability",
+      "skill": "langsmith",
+      "standalone": false
+    },
+    {
+      "category": "17-observability",
+      "skill": "phoenix",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "audiocraft",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "blip-2",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "clip",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "cosmos-policy",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "llava",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "openpi",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "openvla-oft",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "segment-anything",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "stable-diffusion",
+      "standalone": false
+    },
+    {
+      "category": "18-multimodal",
+      "skill": "whisper",
+      "standalone": false
+    },
+    {
+      "category": "19-emerging-techniques",
+      "skill": "knowledge-distillation",
+      "standalone": false
+    },
+    {
+      "category": "19-emerging-techniques",
+      "skill": "long-context",
+      "standalone": false
+    },
+    {
+      "category": "19-emerging-techniques",
+      "skill": "model-merging",
+      "standalone": false
+    },
+    {
+      "category": "19-emerging-techniques",
+      "skill": "model-pruning",
+      "standalone": false
+    },
+    {
+      "category": "19-emerging-techniques",
+      "skill": "moe-training",
+      "standalone": false
+    },
+    {
+      "category": "19-emerging-techniques",
+      "skill": "speculative-decoding",
+      "standalone": false
+    },
+    {
+      "category": "20-ml-paper-writing",
+      "skill": "academic-plotting",
+      "standalone": false
+    },
+    {
+      "category": "20-ml-paper-writing",
+      "skill": "ml-paper-writing",
+      "standalone": false
+    },
+    {
+      "category": "20-ml-paper-writing",
+      "skill": "presenting-conference-talks",
+      "standalone": false
+    },
+    {
+      "category": "20-ml-paper-writing",
+      "skill": "systems-paper-writing",
+      "standalone": false
+    },
+    {
+      "category": "21-research-ideation",
+      "skill": "brainstorming-research-ideas",
+      "standalone": false
+    },
+    {
+      "category": "21-research-ideation",
+      "skill": "creative-thinking-for-research",
+      "standalone": false
+    },
+    {
+      "category": "0-autoresearch-skill",
+      "skill": "0-autoresearch-skill",
+      "standalone": true
+    }
+  ],
+  "agents": [
+    "claude",
+    "codex",
+    "qoder"
+  ]
+}
