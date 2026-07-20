@@ -1,0 +1,88 @@
+{
+  "created_at": "2026-07-19T07:58:05.529810+00:00",
+  "host": "localhost",
+  "ports": {
+    "5": 8105,
+    "8": 8108,
+    "16": 8116
+  },
+  "dataset": "/home/admin/.cache/DreamZero-DROID-Data",
+  "sample_manifest": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h2_wam_static_compute/sample_manifest.json",
+  "phase_table": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h1_gt_chunk_phase/results/confirmatory_1200/chunks.parquet",
+  "episodes": [
+    {
+      "episode": 1925,
+      "length": 204,
+      "prompt": "Move the sachets from the plate to the cup in the middle"
+    },
+    {
+      "episode": 2528,
+      "length": 212,
+      "prompt": "Place the wooden spatula in the silver holder"
+    },
+    {
+      "episode": 3840,
+      "length": 211,
+      "prompt": "Move two right blocks to the left"
+    },
+    {
+      "episode": 7814,
+      "length": 200,
+      "prompt": "Put the seal tape in the box"
+    },
+    {
+      "episode": 14688,
+      "length": 205,
+      "prompt": "Remove the lid from the black pot and place it on the blue pot"
+    },
+    {
+      "episode": 16001,
+      "length": 207,
+      "prompt": "Pick up the black remote and place it on the red bowl"
+    },
+    {
+      "episode": 21370,
+      "length": 191,
+      "prompt": "Put the orange and yellow plastic cup on the top shelf of the cabinet"
+    },
+    {
+      "episode": 22235,
+      "length": 206,
+      "prompt": "Pick up the green sprite can from the clear bowl and place it on the kitchen counter"
+    },
+    {
+      "episode": 28198,
+      "length": 213,
+      "prompt": "Put the cup inside the sink"
+    },
+    {
+      "episode": 36870,
+      "length": 197,
+      "prompt": "Remove the clear lid from the black lunchbox and put it on the counter"
+    },
+    {
+      "episode": 46492,
+      "length": 214,
+      "prompt": "Put the rope in the groove on the black object"
+    },
+    {
+      "episode": 50458,
+      "length": 196,
+      "prompt": "Take the marker out of the cup and put it on the table"
+    }
+  ],
+  "git": {
+    "head": "ca265b4ca3987cfd4d7f699137872bea46effe1c",
+    "branch": "main",
+    "dirty": true,
+    "status_sha256": "f7ca616a131a7ade08e9d0ea77615b722b991b1794d6e4982aa3179f7dfbe54d",
+    "status_lines": 17
+  },
+  "environment": {
+    "python": "3.11.15 | packaged by conda-forge | (main, Jun 11 2026, 03:34:02) [GCC 14.3.0]",
+    "platform": "Linux-5.10.134-010.ali5000.al8.x86_64-x86_64-with-glibc2.35",
+    "numpy": "1.26.4",
+    "pandas": "3.0.3",
+    "opencv": "4.8.0"
+  }
+}

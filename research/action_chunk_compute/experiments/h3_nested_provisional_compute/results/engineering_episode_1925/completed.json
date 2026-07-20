@@ -1,0 +1,9 @@
+[
+  {
+    "episode": 1925,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/engineering_episode_1925/episode_001925.npz",
+    "initial_latency": 24.09839418111369,
+    "mean_latency": 9.030828258355282
+  }
+]

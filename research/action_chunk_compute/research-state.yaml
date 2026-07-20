@@ -2,7 +2,7 @@ project: action_chunk_compute
 title: 从 WAM chunk 间动作信号识别精细操作并预测额外计算收益
 created_at: 2026-07-19
 updated_at: 2026-07-19
-status: active
+status: complete_no_go
 goal:
   question: >-
     能否从 WAM 输出动作中识别机器人已进入精细操作阶段，并利用该信号决定
@@ -28,16 +28,16 @@ research_questions:
 hypotheses:
   - id: H1
     statement: 预测夹爪事件可识别交互阶段，chunk 间变化在其基础上对 pre-close 阶段有增量信息。
-    status: testing
+    status: supported
   - id: H2
     statement: 单纯的关节幅度、速度、加速度或 jerk 与精细操作难度不存在稳定正单调关系。
-    status: testing
+    status: supported
   - id: H3
     statement: 语义交互阶段本身不足以预测额外 DiT 计算收益。
-    status: testing
+    status: supported
   - id: H4
     statement: 同次去噪轨迹中的 provisional-action 收敛量比物理动作幅度更能预测继续计算收益。
-    status: pending
+    status: rejected_on_current_metric
 decision_gates:
   phase_signal: >-
     episode 分组交叉验证中，joint+predicted-gripper+transition 相对
@@ -54,5 +54,14 @@ artifacts:
   gt_protocol: experiments/h1_gt_chunk_phase/protocol.md
   static_protocol: experiments/h2_wam_static_compute/protocol.md
   nested_protocol: experiments/h3_nested_provisional_compute/protocol.md
-next_action: 实现并运行多 episode GT chunk 间阶段代理与动作几何分析
-
+  final_report: ../../docs/2_action_phase_compute_research.md
+  gt_results: experiments/h1_gt_chunk_phase/results/confirmatory_1200
+  static_results: experiments/h2_wam_static_compute/results/diagnostic_contiguous_12/analysis
+  nested_results: experiments/h3_nested_provisional_compute/results/prefix_trace_12/analysis
+outcome:
+  phase_segmentation: go
+  magnitude_or_acceleration_threshold: no_go
+  phase_aware_more_compute_gate: no_go
+  action_flow_compute_gate: no_go_on_offline_mae
+  deployment: blocked_pending_closed_loop_validation
+next_action: 在仿真或真机闭环成功率上比较固定低预算与默认 8-call；在此之前不实现阶段感知多算 gate

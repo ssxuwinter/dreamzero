@@ -1,0 +1,61 @@
+{
+  "status": "exploratory_video_labelled_multiphase_check",
+  "episode": 50458,
+  "fps": 15.0,
+  "segments": [
+    {
+      "name": "simple_1",
+      "label": "simple",
+      "cycle": 1,
+      "frame_start_inclusive": 0,
+      "frame_end_exclusive": 38,
+      "seconds": [
+        0.0,
+        2.533333333333333
+      ]
+    },
+    {
+      "name": "fine_1",
+      "label": "fine",
+      "cycle": 1,
+      "frame_start_inclusive": 38,
+      "frame_end_exclusive": 125,
+      "seconds": [
+        2.533333333333333,
+        8.333333333333334
+      ]
+    },
+    {
+      "name": "simple_2",
+      "label": "simple",
+      "cycle": 2,
+      "frame_start_inclusive": 125,
+      "frame_end_exclusive": 165,
+      "seconds": [
+        8.333333333333334,
+        11.0
+      ]
+    },
+    {
+      "name": "fine_2",
+      "label": "fine",
+      "cycle": 2,
+      "frame_start_inclusive": 165,
+      "frame_end_exclusive": 188,
+      "seconds": [
+        11.0,
+        12.533333333333333
+      ]
+    }
+  ],
+  "wam_coverage_frames": [
+    23,
+    190
+  ],
+  "excluded_chunk_offsets": [
+    0,
+    1,
+    2
+  ],
+  "warning": "One episode and visually approximate boundaries; exploratory only."
+}

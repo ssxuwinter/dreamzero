@@ -243,14 +243,15 @@ class VLA(PreTrainedModel):
         self.validate_inputs(inputs)
         backbone_inputs = self.backbone.prepare_input(inputs)
         action_inputs = self.action_head.prepare_input(inputs)
+        target_device = getattr(self.action_head, "_device", self.device)
 
         def to_device_with_maybe_dtype(x):
             # Only cast to self.compute_dtype if the tensor is floating
             if torch.is_floating_point(x):
-                return x.to(self.device, dtype=self.action_head.dtype)
+                return x.to(target_device, dtype=self.action_head.dtype)
             else:
                 # Keep original dtype
-                return x.to(self.device)
+                return x.to(target_device)
 
         backbone_inputs = tree.map_structure(to_device_with_maybe_dtype, backbone_inputs)
         action_inputs = tree.map_structure(to_device_with_maybe_dtype, action_inputs)
@@ -539,15 +540,15 @@ class VLA(PreTrainedModel):
         config = VLAConfig(**config_dict)
         print("loading model")
         print("config.action_head_cfg", config.action_head_cfg)
-        # Always disable defer_lora_injection
-        # config.action_head_cfg is a dict, and defer_lora_injection is nested in config.action_head_cfg['config']
-        if 'config' in config.action_head_cfg and isinstance(config.action_head_cfg['config'], dict):
-            if 'defer_lora_injection' in config.action_head_cfg['config']:
-                config.action_head_cfg['config']['defer_lora_injection'] = False
-                print("config.action_head_cfg['config']['defer_lora_injection'] disabled (set to False)")
-        elif 'defer_lora_injection' in config.action_head_cfg:
-            config.action_head_cfg['defer_lora_injection'] = False
-            print("config.action_head_cfg['defer_lora_injection'] disabled (set to False)")
+        action_head_config = config.action_head_cfg
+        if (
+            "config" in action_head_config
+            and isinstance(action_head_config["config"], dict)
+        ):
+            action_head_config = action_head_config["config"]
+        action_head_config["defer_lora_injection"] = False
+        action_head_config["skip_component_loading"] = True
+        print("Loading all DreamZero components from the full checkpoint.")
 
         # Instantiate model
         model = cls(config)

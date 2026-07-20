@@ -2,6 +2,7 @@
 
 import contextlib
 import torch
+from torch.nn.attention import SDPBackend, sdpa_kernel
 from torch.profiler import profile, ProfilerActivity
 import time
 from typing import Optional
@@ -33,6 +34,12 @@ except ModuleNotFoundError:
     TRANSFORMER_ENGINE_AVAILABLE = False
 
 import warnings
+
+
+def _sdpa_kernel_context(force_cudnn=False):
+    if force_cudnn or os.getenv("ATTENTION_BACKEND", "").lower() == "cudnn":
+        return sdpa_kernel(SDPBackend.CUDNN_ATTENTION)
+    return contextlib.nullcontext()
 
 
 def _gpu_supports_flash_attention():
@@ -71,9 +78,10 @@ def _sdpa_attention_fallback(
         q = q * q_scale
     if softmax_scale is not None:
         q = q * softmax_scale
-    out = torch.nn.functional.scaled_dot_product_attention(
-        q, k, v, attn_mask=None, is_causal=causal, dropout_p=dropout_p
-    )
+    with _sdpa_kernel_context():
+        out = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=None, is_causal=causal, dropout_p=dropout_p
+        )
     return out.transpose(1, 2).contiguous()
 
 
@@ -118,8 +126,11 @@ def flash_attention(
     assert dtype in half_dtypes
     assert q.device.type == 'cuda' and q.size(-1) <= 256
 
-    # Use PyTorch SDPA on pre-Ampere GPUs (FlashAttention requires Ampere or newer)
-    if not _gpu_supports_flash_attention():
+    # An explicit cuDNN selection takes precedence even when FlashAttention is installed.
+    if (
+        os.getenv("ATTENTION_BACKEND", "").lower() == "cudnn"
+        or not _gpu_supports_flash_attention()
+    ):
         return _sdpa_attention_fallback(
             q, k, v,
             q_lens=q_lens,
@@ -234,23 +245,24 @@ class AttentionModule(torch.nn.Module):
             print("Warning: Transformer Engine is not available. Falling back to FA2 backend.")
             backend = "FA2"
 
-        assert backend in ["torch", "FA2", "FA3", "TE", "torch_onnx"]
+        assert backend in ["torch", "cudnn", "FA2", "FA3", "TE", "torch_onnx"]
         self.backend = backend
 
-        if backend == "torch":
+        if backend in ["torch", "cudnn"]:
             def _torch_impl(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
                 out_dtype = q.dtype
                 q = q.transpose(1, 2).to(dtype)
                 k = k.transpose(1, 2).to(dtype)
                 v = v.transpose(1, 2).to(dtype)
 
-                out = torch.nn.functional.scaled_dot_product_attention(
-                    q, k, v,
-                    attn_mask=None,
-                    is_causal=causal,
-                    dropout_p=dropout_p,
-                    scale=softmax_scale,
-                )
+                with _sdpa_kernel_context(force_cudnn=backend == "cudnn"):
+                    out = torch.nn.functional.scaled_dot_product_attention(
+                        q, k, v,
+                        attn_mask=None,
+                        is_causal=causal,
+                        dropout_p=dropout_p,
+                        scale=softmax_scale,
+                    )
 
                 out = out.transpose(1, 2).contiguous()
                 return out.to(out_dtype)
@@ -335,7 +347,7 @@ class AttentionModule(torch.nn.Module):
         k_lens: Optional[torch.Tensor] = None,
     ):
         if (
-            self.backend == "torch" or
+            self.backend in ["torch", "cudnn"] or
             self.backend == "torch_onnx" or
             (self.backend == "TE" and TRANSFORMER_ENGINE_AVAILABLE)
         ):

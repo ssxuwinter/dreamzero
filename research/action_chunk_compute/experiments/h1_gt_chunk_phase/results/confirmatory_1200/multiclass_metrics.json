@@ -1,0 +1,14 @@
+{
+  "labels": [
+    "closing",
+    "free_open",
+    "hold",
+    "pre_close",
+    "release"
+  ],
+  "samples": 10674,
+  "episodes": 1150,
+  "macro_f1": 0.8619683792994834,
+  "balanced_accuracy": 0.8665384743154302,
+  "ovr_macro_auroc": 0.9810471992613421
+}

@@ -1,0 +1,47 @@
+{
+  "created_at": "2026-07-19T08:25:40.438208+00:00",
+  "host": "localhost",
+  "port": 8120,
+  "dataset": "/home/admin/.cache/DreamZero-DROID-Data",
+  "sample_manifest": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h2_wam_static_compute/sample_manifest.json",
+  "phase_table": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h1_gt_chunk_phase/results/confirmatory_1200/chunks.parquet",
+  "prefix_stops": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "semantics": "first k full-trajectory action flows, then reuse flow k through scheduler step 16",
+  "episodes": [
+    {
+      "episode": 1925,
+      "length": 204,
+      "prompt": "Move the sachets from the plate to the cup in the middle"
+    }
+  ],
+  "git": {
+    "head": "e962a714c0305ca4b1696eac1720e21c0c0e13af",
+    "branch": "main",
+    "dirty": true,
+    "status_sha256": "f7ca616a131a7ade08e9d0ea77615b722b991b1794d6e4982aa3179f7dfbe54d",
+    "status_lines": 17
+  },
+  "environment": {
+    "python": "3.11.15 | packaged by conda-forge | (main, Jun 11 2026, 03:34:02) [GCC 14.3.0]",
+    "platform": "Linux-5.10.134-010.ali5000.al8.x86_64-x86_64-with-glibc2.35",
+    "numpy": "1.26.4",
+    "pandas": "3.0.3"
+  }
+}

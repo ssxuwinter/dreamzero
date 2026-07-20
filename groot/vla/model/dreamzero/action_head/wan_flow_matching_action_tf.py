@@ -198,6 +198,9 @@ class WANPolicyHead(ActionHead):
         self.ys = None
         self.current_start_frame = 0
         self.language = None
+        self._prompt_cache_input_ids = None
+        self._prompt_cache_attention_mask = None
+        self._prompt_cache_value = None
 
         self.ip_rank = 0
         self.ip_size = 1
@@ -221,6 +224,15 @@ class WANPolicyHead(ActionHead):
         else:
             self.dit_step_mask = [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True]
         assert self.dit_step_mask[0] == True, "first step must be True"
+        self.trace_action_denoising = (
+            os.getenv("TRACE_ACTION_DENOISING", "False").lower() == "true"
+        )
+        if self.trace_action_denoising and (
+            self.dynamic_cache_schedule or not all(self.dit_step_mask)
+        ):
+            raise ValueError(
+                "TRACE_ACTION_DENOISING requires a full 16-call static trajectory."
+            )
 
         self.normalize_video = v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
@@ -239,29 +251,32 @@ class WANPolicyHead(ActionHead):
         self.action_horizon = config.action_horizon
         self.num_inference_timesteps = config.num_inference_timesteps
         
-        text_enc_path = ensure_file(
-            self.text_encoder.text_encoder_pretrained_path,
-            "models_t5_umt5-xxl-enc-bf16.pth",
-        )
-        self.text_encoder.load_state_dict(torch.load(text_enc_path, map_location='cpu'))
-
-        img_enc_path = ensure_file(
-            self.image_encoder.image_encoder_pretrained_path,
-            "models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth",
-        )
-        self.image_encoder.model.load_state_dict(torch.load(img_enc_path, map_location='cpu'), strict=False)
-
-        # Wan2.2 (WanVideoVAE38, z_dim=48) uses Wan2.2_VAE.pth; Wan2.1 uses Wan2.1_VAE.pth
-        vae_hf_filename = "Wan2.2_VAE.pth" if getattr(self.vae, "z_dim", 16) == 48 else "Wan2.1_VAE.pth"
-        vae_repo_id = WAN22_HF_REPO_ID if getattr(self.vae, "z_dim", 16) == 48 else WAN_HF_REPO_ID
-        vae_path = ensure_file(
-            self.vae.vae_pretrained_path,
-            vae_hf_filename,
-            repo_id=vae_repo_id,
-        )
-        self.vae.model.load_state_dict(torch.load(vae_path, map_location='cpu'))
-
         if not config.skip_component_loading:
+            text_enc_path = ensure_file(
+                self.text_encoder.text_encoder_pretrained_path,
+                "models_t5_umt5-xxl-enc-bf16.pth",
+            )
+            self.text_encoder.load_state_dict(torch.load(text_enc_path, map_location='cpu'))
+
+            img_enc_path = ensure_file(
+                self.image_encoder.image_encoder_pretrained_path,
+                "models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth",
+            )
+            self.image_encoder.model.load_state_dict(
+                torch.load(img_enc_path, map_location='cpu'), strict=False
+            )
+
+            # Wan2.2 uses WanVideoVAE38; Wan2.1 uses the 16-channel VAE.
+            is_wan22 = getattr(self.vae, "z_dim", 16) == 48
+            vae_hf_filename = "Wan2.2_VAE.pth" if is_wan22 else "Wan2.1_VAE.pth"
+            vae_repo_id = WAN22_HF_REPO_ID if is_wan22 else WAN_HF_REPO_ID
+            vae_path = ensure_file(
+                self.vae.vae_pretrained_path,
+                vae_hf_filename,
+                repo_id=vae_repo_id,
+            )
+            self.vae.model.load_state_dict(torch.load(vae_path, map_location='cpu'))
+
             dit_dir = self.model.diffusion_model_pretrained_path
             # Wan2.2 (in_dim=48) uses Wan2.2-TI2V-5B repo; Wan2.1 uses Wan2.1-I2V-14B-480P
             dit_repo_id = WAN22_HF_REPO_ID if getattr(self.model, "in_dim", 16) == 48 else WAN_HF_REPO_ID
@@ -309,7 +324,10 @@ class WANPolicyHead(ActionHead):
 
                 print("Successfully loaded pretrained weights")
         else:
-            print("Skipping individual component loading (loading from full pretrained model)")
+            print(
+                "Skipping T5, CLIP, VAE, and DiT component loading; "
+                "weights will come from the full pretrained checkpoint."
+            )
         self.beta_dist = Beta(config.noise_beta_alpha, config.noise_beta_beta)
         # Video noise Beta distribution (biased towards high noise levels when enabled)
         self.video_beta_dist = Beta(config.video_noise_beta_alpha, config.video_noise_beta_beta)
@@ -425,8 +443,27 @@ class WANPolicyHead(ActionHead):
             self.vae.eval()
     
     
-    def enable_vram_management(self, num_persistent_param_in_dit=None):
+    def enable_vram_management(
+        self,
+        num_persistent_param_in_dit=None,
+        computation_device=None,
+        computation_dtype=None,
+    ):
+        if self.cpu_offload:
+            return
+
+        if computation_device is None:
+            computation_device = self._device
+        computation_device = torch.device(computation_device)
+        self._device = str(computation_device)
+
         dtype = next(iter(self.text_encoder.parameters())).dtype
+        if computation_dtype is None:
+            computation_dtype = dtype
+        text_encoder_bytes = sum(
+            param.numel() * param.element_size()
+            for param in self.text_encoder.parameters()
+        )
         enable_vram_management(
             self.text_encoder,
             module_map = {
@@ -440,12 +477,32 @@ class WANPolicyHead(ActionHead):
                 offload_device="cpu",
                 onload_dtype=dtype,
                 onload_device="cpu",
-                computation_dtype=self.dtype,
-                computation_device='cuda',
+                computation_dtype=computation_dtype,
+                computation_device=computation_device,
             ),
         )
 
         self.cpu_offload = True
+        print(
+            "T5 CPU offload enabled: "
+            f"{text_encoder_bytes / 1024**3:.2f} GiB stays on CPU; "
+            f"layers execute on {computation_device}."
+        )
+
+    def move_non_text_components_to_device(self, device, dtype=torch.bfloat16):
+        """Move the action head to a device without moving the CPU-resident T5."""
+        if not self.cpu_offload:
+            self.to(device=device, dtype=dtype)
+            return
+
+        self._device = str(torch.device(device))
+        text_encoder = self.text_encoder
+        self.text_encoder = None
+        try:
+            self.to(device=device, dtype=dtype)
+        finally:
+            self.text_encoder = text_encoder
+        self.text_encoder.to(device="cpu", dtype=dtype)
 
     def load_models_to_device(self, loadmodel_names=[]):
         # only load models to device if cpu_offload is enabled
@@ -540,11 +597,39 @@ class WANPolicyHead(ActionHead):
         return image
 
     def encode_prompt(self, input_ids, attention_mask):
-        seq_lens = attention_mask.gt(0).sum(dim=1).long()
-        prompt_emb = self.text_encoder(input_ids, attention_mask)
+        if (
+            not self.training
+            and self._prompt_cache_value is not None
+            and torch.equal(input_ids, self._prompt_cache_input_ids)
+            and torch.equal(attention_mask, self._prompt_cache_attention_mask)
+        ):
+            return self._prompt_cache_value
+
+        seq_lens = attention_mask.gt(0).sum(dim=1).long().tolist()
+        if self.cpu_offload:
+            # The wrapped T5 weights are copied to the computation device one
+            # layer at a time, so its activations must start on that device too.
+            input_ids_for_encoder = input_ids.to(self._device, non_blocking=True)
+            attention_mask_for_encoder = attention_mask.to(
+                self._device, non_blocking=True,
+            )
+        else:
+            input_ids_for_encoder = input_ids
+            attention_mask_for_encoder = attention_mask
+
+        prompt_emb = self.text_encoder(
+            input_ids_for_encoder, attention_mask_for_encoder,
+        )
         prompt_emb = prompt_emb.clone().to(dtype=torch.bfloat16)
         for i, v in enumerate(seq_lens):
-            prompt_emb[:, v:] = 0
+            prompt_emb[i, v:] = 0
+
+        if not self.training:
+            self._prompt_cache_input_ids = input_ids.detach().clone()
+            self._prompt_cache_attention_mask = attention_mask.detach().clone()
+            self._prompt_cache_value = prompt_emb
+            if self.cpu_offload and prompt_emb.is_cuda:
+                torch.cuda.empty_cache()
         return prompt_emb
 
     def _ensure_vae_on_device(self, ref_tensor):
@@ -561,6 +646,11 @@ class WANPolicyHead(ActionHead):
         return latents
 
     def encode_image(self, image, num_frames, height, width):
+        image = image.to(
+            device=self._device,
+            dtype=torch.bfloat16,
+            non_blocking=True,
+        )
         with torch.amp.autocast(dtype=torch.bfloat16, device_type=torch.device(self._device).type):
             batch_size = image.shape[0]
             clip_context = self.image_encoder.encode_image(image)
@@ -816,6 +906,42 @@ class WANPolicyHead(ActionHead):
         generator = None if seed is None else torch.Generator(device).manual_seed(seed)
         noise = torch.randn(shape, generator=generator, device=device, dtype=dtype)
         return noise
+
+    def _build_action_prefix_trace(
+        self,
+        initial_noise_action: torch.Tensor,
+        action_flows: list[torch.Tensor],
+    ) -> torch.Tensor:
+        """Replay prefix-stop policies using a shared full-trajectory flow trace."""
+        if len(action_flows) != self.num_inference_steps:
+            raise RuntimeError(
+                f"Expected {self.num_inference_steps} action flows, got {len(action_flows)}."
+            )
+
+        prefix_actions = []
+        for stop_after in range(1, self.num_inference_steps + 1):
+            scheduler = FlowUniPCMultistepScheduler(
+                num_train_timesteps=self.scheduler.num_train_timesteps,
+                shift=1,
+                use_dynamic_shifting=False,
+            )
+            scheduler.set_timesteps(
+                self.num_inference_steps,
+                device=initial_noise_action.device,
+                shift=self.sigma_shift,
+            )
+            sample = initial_noise_action.clone()
+            for index, action_timestep in enumerate(scheduler.timesteps):
+                flow = action_flows[min(index, stop_after - 1)]
+                sample = scheduler.step(
+                    model_output=flow,
+                    timestep=action_timestep,
+                    sample=sample,
+                    step_index=index,
+                    return_dict=False,
+                )[0]
+            prefix_actions.append(sample)
+        return torch.stack(prefix_actions, dim=1)
     
     def _get_caches(
         self, kv_caches_input: list[KVCacheType],
@@ -1193,6 +1319,7 @@ class WANPolicyHead(ActionHead):
 
         noisy_input = noise_obs
         noisy_input_action = noise_action
+        initial_noise_action = noise_action.clone()
 
         # Step 3.1: Spatial denoising loop
 
@@ -1224,6 +1351,7 @@ class WANPolicyHead(ActionHead):
         start_diffusion_events = [torch.cuda.Event(enable_timing=True) for _ in sample_scheduler.timesteps]
         end_diffusion_events = [torch.cuda.Event(enable_timing=True) for _ in sample_scheduler.timesteps]
         prev_predictions = [] 
+        action_flow_trace = []
         self.skip_countdown = 0
         dit_compute_steps = 0
         for index, current_timestep in enumerate(sample_scheduler.timesteps):
@@ -1276,6 +1404,8 @@ class WANPolicyHead(ActionHead):
 
                 flow_pred = flow_pred_uncond + self.cfg_scale * (flow_pred_cond - flow_pred_uncond)
                 prev_predictions.append((current_timestep, flow_pred, flow_pred_cond_action))
+                if self.trace_action_denoising:
+                    action_flow_trace.append(flow_pred_cond_action.detach().clone())
                 max_cache_size = 2
                 if len(prev_predictions) > max_cache_size:
                     prev_predictions.pop(0)
@@ -1306,6 +1436,12 @@ class WANPolicyHead(ActionHead):
 
         latents = noisy_input
         latents_action = noisy_input_action
+        action_prefix_trace = None
+        if self.trace_action_denoising:
+            action_prefix_trace = self._build_action_prefix_trace(
+                initial_noise_action,
+                action_flow_trace,
+            )
         output = latents
 
         if self.current_start_frame == 1:
@@ -1335,7 +1471,14 @@ class WANPolicyHead(ActionHead):
                   f"DIT Compute Steps {dit_compute_steps} steps, "
                   f"Scheduler {scheduler_time:.2f} seconds")
 
-        return BatchFeature(data={"action_pred": latents_action, "video_pred": output.transpose(1, 2)})
+        result = {
+            "action_pred": latents_action,
+            "video_pred": output.transpose(1, 2),
+        }
+        if action_prefix_trace is not None:
+            result["action_prefix_trace"] = action_prefix_trace
+            result["action_flow_trace"] = torch.stack(action_flow_trace, dim=1)
+        return BatchFeature(data=result)
     
     def cache_predict_order1(self, current_timestep, timestep_1, f1, timestep_2, f2):
         h_curr = current_timestep - timestep_1
@@ -1349,32 +1492,52 @@ class WANPolicyHead(ActionHead):
         return flow_pred
 
     def post_initialize(self):
-        # Move models to the cuda device and set the dtype to bfloat16.
-        print("Moving models to the cuda device and setting the dtype to bfloat16.")
+        print("Moving inference components to the cuda device in bfloat16.")
         self.model.to(device=self._device, dtype=torch.bfloat16)
-        self.text_encoder.to(device=self._device, dtype=torch.bfloat16)
         self.image_encoder.to(device=self._device, dtype=torch.bfloat16)
         self.vae.to(device=self._device, dtype=torch.bfloat16)
+        if self.cpu_offload:
+            self.text_encoder.to(device="cpu", dtype=torch.bfloat16)
+            text_encoder_devices = {
+                parameter.device.type for parameter in self.text_encoder.parameters()
+            }
+            if text_encoder_devices != {"cpu"}:
+                raise RuntimeError(
+                    "T5 CPU offload is enabled, but some text encoder parameters "
+                    f"are on {sorted(text_encoder_devices)}."
+                )
+            print("T5 remains on CPU and will execute one layer at a time on the GPU.")
+        else:
+            self.text_encoder.to(device=self._device, dtype=torch.bfloat16)
         import os
         ENABLE_TENSORRT = os.getenv("ENABLE_TENSORRT", "False").lower() == "true"
         LOAD_TRT_ENGINE = os.getenv("LOAD_TRT_ENGINE", None)
+        COMPILE_ENCODERS = os.getenv("COMPILE_ENCODERS", "true").lower() == "true"
 
         # Torch compile the modules. Skip _forward_blocks: Dynamo with fullgraph can fail on
         # shape variation (e.g. x [1,50,C] vs e [1,200,C]); the block aligns e to x at runtime.
         if not ENABLE_TENSORRT:
-            print("Torch compiling the TextEncoder, ImageEncoder, and VAE modules (Wan _forward_blocks not compiled).")
+            if self.cpu_offload:
+                print("Skipping torch.compile for the layer-offloaded TextEncoder.")
+            else:
+                self.text_encoder.forward = torch.compile(
+                    mode="reduce-overhead", fullgraph=True, dynamic=False,
+                )(self.text_encoder.forward)
 
-            self.text_encoder.forward = torch.compile(
-                mode="reduce-overhead", fullgraph=True, dynamic=False,
-            )(self.text_encoder.forward)
+            if COMPILE_ENCODERS:
+                print("Torch compiling the ImageEncoder and VAE modules (Wan _forward_blocks not compiled).")
+                self.image_encoder.model.visual.forward = torch.compile(
+                    mode="reduce-overhead", fullgraph=True, dynamic=False,
+                )(self.image_encoder.model.visual.forward)
 
-            self.image_encoder.model.visual.forward = torch.compile(
-                mode="reduce-overhead", fullgraph=True, dynamic=False,
-            )(self.image_encoder.model.visual.forward)
-
-            self.vae.model.encode = torch.compile(
-                mode="reduce-overhead", fullgraph=True, dynamic=False,
-            )(self.vae.model.encode)
+                self.vae.model.encode = torch.compile(
+                    mode="reduce-overhead", fullgraph=True, dynamic=False,
+                )(self.vae.model.encode)
+            else:
+                print(
+                    "Skipping ImageEncoder/VAE torch.compile to avoid CUDA Graph "
+                    "private-pool VRAM."
+                )
         
         self.trt_engine = None
         if LOAD_TRT_ENGINE is not None:

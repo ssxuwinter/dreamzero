@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.attention import SDPBackend, sdpa_kernel
 import math
 import os
 from typing import Tuple, Optional
@@ -52,11 +53,19 @@ else:
     FLASH_ATTN_COMPATIBILITY_MODE = False
 def flash_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, num_heads: int, compatibility_mode=False):
     # Use PyTorch SDPA on pre-Ampere GPUs or when compatibility_mode (FlashAttention requires Ampere or newer)
-    if compatibility_mode or not _gpu_supports_flash_attention():
+    if (
+        os.getenv("ATTENTION_BACKEND", "").lower() == "cudnn"
+        or compatibility_mode
+        or not _gpu_supports_flash_attention()
+    ):
         q = rearrange(q, "b s (n d) -> b n s d", n=num_heads)
         k = rearrange(k, "b s (n d) -> b n s d", n=num_heads)
         v = rearrange(v, "b s (n d) -> b n s d", n=num_heads)
-        x = F.scaled_dot_product_attention(q, k, v)
+        if os.getenv("ATTENTION_BACKEND", "").lower() == "cudnn":
+            with sdpa_kernel(SDPBackend.CUDNN_ATTENTION):
+                x = F.scaled_dot_product_attention(q, k, v)
+        else:
+            x = F.scaled_dot_product_attention(q, k, v)
         x = rearrange(x, "b n s d -> b s (n d)", n=num_heads)
     elif FLASH_ATTN_3_AVAILABLE:
         q = rearrange(q, "b s (n d) -> b s n d", n=num_heads)

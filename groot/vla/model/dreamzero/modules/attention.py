@@ -1,6 +1,8 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
+import contextlib
 import torch
 import os
+from torch.nn.attention import SDPBackend, sdpa_kernel
 
 try:
     import flash_attn_interface
@@ -15,6 +17,12 @@ except ModuleNotFoundError:
     FLASH_ATTN_2_AVAILABLE = False
 
 import warnings
+
+
+def _sdpa_kernel_context():
+    if os.getenv("ATTENTION_BACKEND", "").lower() == "cudnn":
+        return sdpa_kernel(SDPBackend.CUDNN_ATTENTION)
+    return contextlib.nullcontext()
 
 
 __all__ = [
@@ -59,9 +67,10 @@ def _sdpa_attention_fallback(
         q = q * q_scale
     if softmax_scale is not None:
         q = q * softmax_scale
-    out = torch.nn.functional.scaled_dot_product_attention(
-        q, k, v, attn_mask=None, is_causal=causal, dropout_p=dropout_p
-    )
+    with _sdpa_kernel_context():
+        out = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=None, is_causal=causal, dropout_p=dropout_p
+        )
     return out.transpose(1, 2).contiguous()
 
 
@@ -97,8 +106,11 @@ def flash_attention(
     assert dtype in half_dtypes
     assert q.device.type == 'cuda' and q.size(-1) <= 256
 
-    # Use PyTorch SDPA on pre-Ampere GPUs (FlashAttention requires Ampere or newer)
-    if not _gpu_supports_flash_attention():
+    # An explicit cuDNN selection takes precedence even when FlashAttention is installed.
+    if (
+        os.getenv("ATTENTION_BACKEND", "").lower() == "cudnn"
+        or not _gpu_supports_flash_attention()
+    ):
         return _sdpa_attention_fallback(
             q, k, v,
             q_lens=q_lens,
@@ -163,8 +175,11 @@ def flash_attention(
             v = v.repeat(q.shape[0], 1, 1, 1)
 
         attn_mask = None
-        out = torch.nn.functional.scaled_dot_product_attention(
-            q, k, v, attn_mask=attn_mask, is_causal=causal, dropout_p=dropout_p)
+        with _sdpa_kernel_context():
+            out = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=attn_mask, is_causal=causal,
+                dropout_p=dropout_p,
+            )
         
         # Transpose back to (b, s, n, d) format.
         out = out.transpose(1, 2).contiguous()
@@ -224,7 +239,10 @@ def attention(
     dtype=torch.bfloat16,
     fa_version=None,
 ):
-    if FLASH_ATTN_2_AVAILABLE or FLASH_ATTN_3_AVAILABLE:
+    if (
+        os.getenv("ATTENTION_BACKEND", "").lower() != "cudnn"
+        and (FLASH_ATTN_2_AVAILABLE or FLASH_ATTN_3_AVAILABLE)
+    ):
         return flash_attention(
             q=q,
             k=k,
@@ -251,8 +269,11 @@ def attention(
         k = k.transpose(1, 2).to(dtype)
         v = v.transpose(1, 2).to(dtype)
 
-        out = torch.nn.functional.scaled_dot_product_attention(
-            q, k, v, attn_mask=attn_mask, is_causal=causal, dropout_p=dropout_p)
+        with _sdpa_kernel_context():
+            out = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=attn_mask, is_causal=causal,
+                dropout_p=dropout_p,
+            )
 
         out = out.transpose(1, 2).contiguous()
         return out

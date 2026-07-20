@@ -1,0 +1,153 @@
+{
+  "source": "video-only; no action data read",
+  "fps": 15,
+  "stride": 8,
+  "samples_per_sheet": 16,
+  "camera_order": [
+    "observation.images.exterior_image_1_left",
+    "observation.images.exterior_image_2_left",
+    "observation.images.wrist_image_left"
+  ],
+  "episodes": [
+    {
+      "episode": 1925,
+      "frame_count": 204,
+      "tasks": [
+        "Move the sachets from the plate to the cup in the middle",
+        "Remove the yellow sachets from the plate and put them in the cup to the right",
+        "Pick up the yellow packets from the white plate and put them in the paper cup to the right"
+      ],
+      "sheets": [
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets/episode_001925_sheet_00.jpg",
+          "sampled_frames": [
+            0,
+            8,
+            16,
+            24,
+            32,
+            40,
+            48,
+            56,
+            64,
+            72,
+            80,
+            88,
+            96,
+            104,
+            112,
+            120
+          ]
+        },
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets/episode_001925_sheet_01.jpg",
+          "sampled_frames": [
+            128,
+            136,
+            144,
+            152,
+            160,
+            168,
+            176,
+            184,
+            192,
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "episode": 16001,
+      "frame_count": 207,
+      "tasks": [
+        "Pick up the black remote and place it on the red bowl",
+        "Place the remote control on the bowl",
+        "Put the black remote on the pink bowl"
+      ],
+      "sheets": [
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets/episode_016001_sheet_00.jpg",
+          "sampled_frames": [
+            0,
+            8,
+            16,
+            24,
+            32,
+            40,
+            48,
+            56,
+            64,
+            72,
+            80,
+            88,
+            96,
+            104,
+            112,
+            120
+          ]
+        },
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets/episode_016001_sheet_01.jpg",
+          "sampled_frames": [
+            128,
+            136,
+            144,
+            152,
+            160,
+            168,
+            176,
+            184,
+            192,
+            200
+          ]
+        }
+      ]
+    },
+    {
+      "episode": 50458,
+      "frame_count": 196,
+      "tasks": [
+        "Take the marker out of the cup and put it on the table",
+        "Take the marker out of the grey mug and put it on the table",
+        "Pick up the marker from the cup and put it on the table"
+      ],
+      "sheets": [
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets/episode_050458_sheet_00.jpg",
+          "sampled_frames": [
+            0,
+            8,
+            16,
+            24,
+            32,
+            40,
+            48,
+            56,
+            64,
+            72,
+            80,
+            88,
+            96,
+            104,
+            112,
+            120
+          ]
+        },
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets/episode_050458_sheet_01.jpg",
+          "sampled_frames": [
+            128,
+            136,
+            144,
+            152,
+            160,
+            168,
+            176,
+            184,
+            192
+          ]
+        }
+      ]
+    }
+  ]
+}

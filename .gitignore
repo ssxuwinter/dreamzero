@@ -244,3 +244,8 @@ groot/control/envs/yam/data/eval/*
 
 checkpoints/
 video_pred_output*/
+# AI 工具技能副本 / 配置（勿提交）
+.codex/
+.qoder/
+.claude/
+.orchestra-skills.json

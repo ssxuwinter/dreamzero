@@ -235,6 +235,7 @@ class GrootSimPolicy(BaseGrootSimPolicy):
         skip_img_transform: bool = False,
         lazy_load: bool = False,
         device_mesh: DeviceMesh | None = None,
+        text_encoder_cpu_offload: bool = False,
     ):
         """
         Initialize the GrootSimPolicy.
@@ -245,6 +246,8 @@ class GrootSimPolicy(BaseGrootSimPolicy):
             device (int | str): Device to run the model on.
             lazy_load (bool): If True, don't load model to GPU immediately.
             device_mesh (DeviceMesh | None): Device mesh to parallelize the model across.
+            text_encoder_cpu_offload (bool): Keep T5 weights on CPU and execute its
+                layers temporarily on the GPU during prompt encoding.
         """
         super().__init__(embodiment_tag=embodiment_tag, model_path=model_path, device=device)
         model_dir = Path(model_path)
@@ -257,6 +260,7 @@ class GrootSimPolicy(BaseGrootSimPolicy):
             _update_tokenizer_path_in_config(train_cfg, tokenizer_path_override)
         self.train_cfg = train_cfg
         self.lazy_load = lazy_load
+        self.text_encoder_cpu_offload = text_encoder_cpu_offload
 
         # Store model loading parameters for lazy loading
         self.model_config_overrides = model_config_overrides
@@ -336,11 +340,38 @@ class GrootSimPolicy(BaseGrootSimPolicy):
         # Store model initially on CPU if lazy loading
         if lazy_load:
             model.to(device='cpu')
+        elif text_encoder_cpu_offload:
+            action_head = getattr(model, "action_head", None)
+            if not (
+                hasattr(action_head, "enable_vram_management")
+                and hasattr(action_head, "move_non_text_components_to_device")
+            ):
+                raise ValueError(
+                    "text_encoder_cpu_offload requires an action head with "
+                    "DreamZero VRAM management support."
+                )
+            action_head.enable_vram_management(
+                computation_device=device,
+                computation_dtype=torch.bfloat16,
+            )
+            action_head.move_non_text_components_to_device(
+                device=device,
+                dtype=torch.bfloat16,
+            )
+            model.backbone.to(device=device)
         else:
             model.to(device=device)
 
         # Post initialize, move RoPE freqs to cuda.
         model.post_initialize()
+
+        if text_encoder_cpu_offload and torch.cuda.is_available():
+            allocated = torch.cuda.memory_allocated() / 1024**3
+            reserved = torch.cuda.memory_reserved() / 1024**3
+            print(
+                f"GPU memory after staged model load: {allocated:.2f} GiB allocated, "
+                f"{reserved:.2f} GiB reserved."
+            )
 
         # Parallelize the model across devices.
         try:
@@ -718,6 +749,8 @@ class GrootSimPolicy(BaseGrootSimPolicy):
             model_pred = self.trained_model.lazy_joint_video_action_causal(normalized_input, latent_video=latent_video)
         normalized_action = model_pred["action_pred"].float()
         video_pred = model_pred["video_pred"]
+        normalized_action_prefix_trace = model_pred.get("action_prefix_trace")
+        action_flow_trace = model_pred.get("action_flow_trace")
 
         model_time = time.perf_counter() - model_start_time
 
@@ -728,6 +761,37 @@ class GrootSimPolicy(BaseGrootSimPolicy):
             batch = self.unapply(Batch(normalized_action=normalized_action), obs=original_obs_for_relative)
         else:
             batch = Batch(normalized_action=normalized_action)
+
+        if normalized_action_prefix_trace is not None and not video_only:
+            trace_actions: dict[str, list[np.ndarray]] = {}
+            for stop_index in range(normalized_action_prefix_trace.shape[1]):
+                trace_batch = self.unapply(
+                    Batch(
+                        normalized_action=normalized_action_prefix_trace[
+                            :, stop_index
+                        ].float()
+                    ),
+                    obs=original_obs_for_relative,
+                )
+                trace_action = trace_batch.act
+                if not is_batched:
+                    trace_action = squeeze_dict_values(trace_action)
+                for key, value in trace_action.items():
+                    if torch.is_tensor(value):
+                        value = value.cpu().numpy()
+                    trace_actions.setdefault(key, []).append(np.asarray(value))
+
+            batch.action_prefix_trace = {
+                key: np.stack(values, axis=0)
+                for key, values in trace_actions.items()
+            }
+            normalized_trace = normalized_action_prefix_trace.float().cpu().numpy()
+            flow_trace = action_flow_trace.float().cpu().numpy()
+            if not is_batched:
+                normalized_trace = normalized_trace[0]
+                flow_trace = flow_trace[0]
+            batch.normalized_action_prefix_trace = normalized_trace
+            batch.action_flow_trace = flow_trace
 
         # 5. Remove batch dimension if we added it
         if not is_batched:

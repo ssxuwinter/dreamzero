@@ -36,7 +36,11 @@ class Args:
     port: int = 8000
     timeout_seconds: int = 50000  # 10 hours default, configurable
     model_path: str = "./checkpoints/dreamzero"
+    tokenizer_path: str | None = None
     enable_dit_cache: bool = False
+    text_encoder_cpu_offload: bool = True
+    attention_backend: str = "cudnn"
+    compile_encoders: bool = False
     index: int = 0
     max_chunk_size: int | None = None  # If None, use config value. Otherwise override max_chunk_size for inference.
 
@@ -225,6 +229,22 @@ class ARDroidRoboarenaPolicy:
         action = np.concatenate([joint_action, gripper_action], axis=-1).astype(np.float32)
         
         return action
+
+    def _convert_action_trace(self, action_trace) -> np.ndarray:
+        """Convert a K-step trace of modality action dictionaries to (K, N, 8)."""
+        trace_items = dict(action_trace.items())
+        if not trace_items:
+            raise RuntimeError("Action prefix trace is empty")
+        num_stops = next(iter(trace_items.values())).shape[0]
+        return np.stack(
+            [
+                self._convert_action(
+                    {key: value[stop_index] for key, value in trace_items.items()}
+                )
+                for stop_index in range(num_stops)
+            ],
+            axis=0,
+        )
     
     def _broadcast_batch_to_workers(self, obs: dict) -> None:
         """Broadcast batch data from rank 0 to all other ranks."""
@@ -297,12 +317,31 @@ class ARDroidRoboarenaPolicy:
                 action_dict[k] = getattr(action_chunk_dict, k)
         
         action = self._convert_action(action_dict)
+
+        if "action_prefix_trace" in result_batch:
+            prefix_actions = self._convert_action_trace(
+                result_batch.action_prefix_trace
+            )
+            if not np.allclose(prefix_actions[-1], action, atol=1e-6, rtol=1e-6):
+                max_diff = float(np.max(np.abs(prefix_actions[-1] - action)))
+                raise RuntimeError(
+                    "The 16-call prefix replay does not match the normal final action; "
+                    f"max_abs_diff={max_diff:.6g}."
+                )
+            response = {
+                "action": action,
+                "prefix_actions": prefix_actions,
+                "normalized_prefix_actions": result_batch.normalized_action_prefix_trace,
+                "action_flows": result_batch.action_flow_trace,
+            }
+        else:
+            response = action
         
         # Update first call flag
         if self._is_first_call:
             self._is_first_call = False
         
-        return action
+        return response
     
     def _reset_state(self, save_video: bool = True) -> None:
         """Internal method to reset policy state.
@@ -741,8 +780,17 @@ def main(args: Args) -> None:
     # Set environment variable for DIT cache.
     os.environ["ENABLE_DIT_CACHE"] = "true" if args.enable_dit_cache else "false"
 
-    # Use TE cuDNN backend for attention.
-    os.environ["ATTENTION_BACKEND"] = "TE"
+    supported_attention_backends = {"cudnn", "torch", "FA2", "FA3", "TE"}
+    if args.attention_backend not in supported_attention_backends:
+        raise ValueError(
+            f"Unsupported attention backend {args.attention_backend!r}; "
+            f"choose one of {sorted(supported_attention_backends)}."
+        )
+    os.environ["ATTENTION_BACKEND"] = args.attention_backend
+    logger.info("Using %s attention backend", args.attention_backend)
+    os.environ["COMPILE_ENCODERS"] = (
+        "true" if args.compile_encoders else "false"
+    )
 
     # Increase the recompile limit to 100 for inference due
     # to autoregressive nature of the model (several possible shapes).
@@ -767,7 +815,9 @@ def main(args: Args) -> None:
         embodiment_tag=EmbodimentTag(embodiment_tag),
         model_path=model_path,
         device="cuda" if torch.cuda.is_available() else "cpu",
+        tokenizer_path_override=args.tokenizer_path,
         device_mesh=device_mesh,
+        text_encoder_cpu_offload=args.text_encoder_cpu_offload,
     )
 
     # Create server for all ranks - rank 0 handles websocket, others run worker loop

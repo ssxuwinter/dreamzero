@@ -1,0 +1,86 @@
+[
+  {
+    "episode": 1925,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_001925.npz",
+    "initial_latency": 9.431401739828289,
+    "mean_latency": 7.169161970860192
+  },
+  {
+    "episode": 2528,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_002528.npz",
+    "initial_latency": 11.588668539188802,
+    "mean_latency": 7.228096441299256
+  },
+  {
+    "episode": 3840,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_003840.npz",
+    "initial_latency": 11.653801685199142,
+    "mean_latency": 7.254708890603589
+  },
+  {
+    "episode": 7814,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_007814.npz",
+    "initial_latency": 11.639254663139582,
+    "mean_latency": 7.252554345410317
+  },
+  {
+    "episode": 14688,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_014688.npz",
+    "initial_latency": 11.609756442252547,
+    "mean_latency": 7.253961963046875
+  },
+  {
+    "episode": 16001,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_016001.npz",
+    "initial_latency": 11.672783826943487,
+    "mean_latency": 7.252716392544763
+  },
+  {
+    "episode": 21370,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_021370.npz",
+    "initial_latency": 11.658266772981733,
+    "mean_latency": 7.251547314226627
+  },
+  {
+    "episode": 22235,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_022235.npz",
+    "initial_latency": 11.672045751009136,
+    "mean_latency": 7.252489465355341
+  },
+  {
+    "episode": 28198,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_028198.npz",
+    "initial_latency": 11.652478608302772,
+    "mean_latency": 7.254919784409659
+  },
+  {
+    "episode": 36870,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_036870.npz",
+    "initial_latency": 11.611216535791755,
+    "mean_latency": 7.252843699950192
+  },
+  {
+    "episode": 46492,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_046492.npz",
+    "initial_latency": 11.630678262095898,
+    "mean_latency": 7.253734336301152
+  },
+  {
+    "episode": 50458,
+    "chunks": 7,
+    "path": "/home/admin/workspace/aop_lab/app_source/mywork/dreamzero/research/action_chunk_compute/experiments/h3_nested_provisional_compute/results/prefix_trace_12/episode_050458.npz",
+    "initial_latency": 11.60522926505655,
+    "mean_latency": 7.252751093158232
+  }
+]

@@ -149,7 +149,11 @@ python test_client_AR.py --port 5000
 
 - `--port`: Port number for the WebSocket server (default: 8000)
 - `--model-path`: Path to the pretrained model checkpoint directory
+- `--tokenizer-path`: Optional local umt5-xxl tokenizer path for offline inference
 - `--enable-dit-cache`: Enable caching in DiT layers for faster inference (recommended)
+- `--text-encoder-cpu-offload`: Keep T5 weights on CPU and execute its layers on the GPU as needed (enabled by default)
+- `--attention-backend`: Attention implementation (`cudnn` by default, using PyTorch SDPA's cuDNN backend)
+- `--compile-encoders`: Compile CLIP/VAE with CUDA Graphs for speed at the cost of about 5 GiB peak VRAM (disabled by default)
 - `--max-chunk-size`: Override max_chunk_size for inference (optional)
 - `--timeout-seconds`: Server timeout in seconds (default: 50000)
 - `--index`: Index for output directory naming (default: 0)

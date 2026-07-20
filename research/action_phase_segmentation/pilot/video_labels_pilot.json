@@ -1,0 +1,54 @@
+{
+  "created_at": "2026-07-19",
+  "status": "exploratory_pilot",
+  "source": "Three-camera DROID videos and task text only; labels were created before inspecting action features.",
+  "fps": 15,
+  "annotator": "Codex visual inspection of 2-frame-stride contact sheets",
+  "notes": [
+    "frame is the working center; frame_lo/frame_hi preserve visual ambiguity.",
+    "approach_onset is intentionally low confidence because free motion transitions gradually into terminal alignment.",
+    "A missing or unclear phase is not forced into the annotation."
+  ],
+  "episodes": [
+    {
+      "episode": 1925,
+      "task": "Pick up the yellow packets from the white plate and put them in the paper cup to the right",
+      "events": [
+        {"name": "approach_onset", "frame": 48, "frame_lo": 40, "frame_hi": 56, "confidence": "low"},
+        {"name": "contact_onset", "frame": 82, "frame_lo": 78, "frame_hi": 88, "confidence": "medium"},
+        {"name": "object_motion_onset", "frame": 88, "frame_lo": 84, "frame_hi": 94, "confidence": "medium"},
+        {"name": "grasp_lift_onset", "frame": 112, "frame_lo": 108, "frame_hi": 116, "confidence": "high"},
+        {"name": "transport_onset", "frame": 130, "frame_lo": 126, "frame_hi": 136, "confidence": "high"},
+        {"name": "placement_contact", "frame": 180, "frame_lo": 178, "frame_hi": 184, "confidence": "medium"},
+        {"name": "release_onset", "frame": 184, "frame_lo": 182, "frame_hi": 188, "confidence": "high"},
+        {"name": "retreat_onset", "frame": 190, "frame_lo": 188, "frame_hi": 194, "confidence": "high"}
+      ]
+    },
+    {
+      "episode": 16001,
+      "task": "Pick up the black remote and place it on the red bowl",
+      "events": [
+        {"name": "approach_onset", "frame": 40, "frame_lo": 32, "frame_hi": 48, "confidence": "low"},
+        {"name": "contact_onset", "frame": 66, "frame_lo": 62, "frame_hi": 72, "confidence": "medium"},
+        {"name": "object_motion_onset", "frame": 78, "frame_lo": 72, "frame_hi": 86, "confidence": "low"},
+        {"name": "placement_contact", "frame": 154, "frame_lo": 148, "frame_hi": 162, "confidence": "medium"},
+        {"name": "release_onset", "frame": 184, "frame_lo": 180, "frame_hi": 188, "confidence": "high"},
+        {"name": "retreat_onset", "frame": 192, "frame_lo": 188, "frame_hi": 196, "confidence": "high"}
+      ],
+      "annotation_note": "No visually separable stable-transport onset was assigned; manipulation and placement appear continuous."
+    },
+    {
+      "episode": 50458,
+      "task": "Take the marker out of the grey mug and put it on the table",
+      "events": [
+        {"name": "approach_onset", "frame": 44, "frame_lo": 36, "frame_hi": 52, "confidence": "low"},
+        {"name": "contact_onset", "frame": 68, "frame_lo": 64, "frame_hi": 74, "confidence": "medium"},
+        {"name": "object_motion_onset", "frame": 110, "frame_lo": 106, "frame_hi": 114, "confidence": "high"},
+        {"name": "transport_onset", "frame": 124, "frame_lo": 120, "frame_hi": 128, "confidence": "high"},
+        {"name": "placement_contact", "frame": 176, "frame_lo": 172, "frame_hi": 180, "confidence": "high"},
+        {"name": "release_onset", "frame": 186, "frame_lo": 182, "frame_hi": 190, "confidence": "medium"},
+        {"name": "retreat_onset", "frame": 190, "frame_lo": 188, "frame_hi": 194, "confidence": "high"}
+      ]
+    }
+  ]
+}

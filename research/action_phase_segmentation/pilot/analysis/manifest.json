@@ -1,0 +1,25 @@
+{
+  "status": "exploratory pilot; not confirmatory",
+  "labels": "research/action_phase_segmentation/pilot/video_labels_pilot.json",
+  "predictions": "research/action_chunk_compute/experiments/h2_wam_static_compute/results/diagnostic_contiguous_12/raw_predictions.jsonl",
+  "schedule": 16,
+  "window": 5,
+  "peak_distance": 6,
+  "top_k_definition": "K equals the number of in-coverage video events; ranking diagnostic only",
+  "event_tolerance": 5,
+  "derivative_definition": "Action-only, within-chunk differences. The undefined first derivative in each chunk is filled from that chunk's first forward difference; no current_state or previous rollout endpoint is used.",
+  "joint_range": [
+    1.8270392084121694,
+    2.2633613204956053,
+    1.6228683328628535,
+    2.318724131584167,
+    3.464749126434326,
+    2.3089434814453123,
+    4.232446565628052
+  ],
+  "episodes": [
+    1925,
+    16001,
+    50458
+  ]
+}

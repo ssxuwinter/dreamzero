@@ -1,0 +1,30 @@
+{
+  "status": "exploratory_quick_check",
+  "episode": 1925,
+  "fps": 15.0,
+  "wam_coverage_frames": [
+    23,
+    190
+  ],
+  "user_label": {
+    "free": [
+      0,
+      44
+    ],
+    "excluded_transition": [
+      45,
+      59
+    ],
+    "fine": [
+      60,
+      203
+    ]
+  },
+  "derivatives": "Within each independent 24-step chunk only.",
+  "excluded_chunk_offsets": [
+    0,
+    1,
+    2
+  ],
+  "warning": "One trajectory only; descriptive signal check, not generalization evidence."
+}

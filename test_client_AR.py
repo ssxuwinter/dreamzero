@@ -18,7 +18,7 @@ Expected server configuration:
 
 Usage:
     # Start server with roboarena interface:
-    torchrun --nproc_per_node=8 socket_test_optimized_AR.py --port 8000
+    torchrun --nproc_per_node=2 socket_test_optimized_AR.py --port 8000
 
     # Run this test:
     python test_client_AR.py --host <server_host> --port 8000

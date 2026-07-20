@@ -1,0 +1,151 @@
+{
+  "source": "video-only; no action data read",
+  "fps": 15,
+  "stride": 2,
+  "samples_per_sheet": 24,
+  "camera_order": [
+    "observation.images.exterior_image_1_left",
+    "observation.images.exterior_image_2_left",
+    "observation.images.wrist_image_left"
+  ],
+  "episodes": [
+    {
+      "episode": 1925,
+      "frame_count": 204,
+      "tasks": [
+        "Move the sachets from the plate to the cup in the middle",
+        "Remove the yellow sachets from the plate and put them in the cup to the right",
+        "Pick up the yellow packets from the white plate and put them in the paper cup to the right"
+      ],
+      "sheets": [
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets_fine/episode_001925/episode_001925_sheet_00.jpg",
+          "sampled_frames": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10,
+            12,
+            14,
+            16,
+            18,
+            20,
+            22,
+            24,
+            26,
+            28,
+            30,
+            32,
+            34,
+            36,
+            38,
+            40,
+            42,
+            44,
+            46
+          ]
+        },
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets_fine/episode_001925/episode_001925_sheet_01.jpg",
+          "sampled_frames": [
+            48,
+            50,
+            52,
+            54,
+            56,
+            58,
+            60,
+            62,
+            64,
+            66,
+            68,
+            70,
+            72,
+            74,
+            76,
+            78,
+            80,
+            82,
+            84,
+            86,
+            88,
+            90,
+            92,
+            94
+          ]
+        },
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets_fine/episode_001925/episode_001925_sheet_02.jpg",
+          "sampled_frames": [
+            96,
+            98,
+            100,
+            102,
+            104,
+            106,
+            108,
+            110,
+            112,
+            114,
+            116,
+            118,
+            120,
+            122,
+            124,
+            126,
+            128,
+            130,
+            132,
+            134,
+            136,
+            138,
+            140,
+            142
+          ]
+        },
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets_fine/episode_001925/episode_001925_sheet_03.jpg",
+          "sampled_frames": [
+            144,
+            146,
+            148,
+            150,
+            152,
+            154,
+            156,
+            158,
+            160,
+            162,
+            164,
+            166,
+            168,
+            170,
+            172,
+            174,
+            176,
+            178,
+            180,
+            182,
+            184,
+            186,
+            188,
+            190
+          ]
+        },
+        {
+          "path": "research/action_phase_segmentation/pilot/contact_sheets_fine/episode_001925/episode_001925_sheet_04.jpg",
+          "sampled_frames": [
+            192,
+            194,
+            196,
+            198,
+            200,
+            202
+          ]
+        }
+      ]
+    }
+  ]
+}
