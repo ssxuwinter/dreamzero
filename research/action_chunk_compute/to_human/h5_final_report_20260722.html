@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>H5 最终结论：attention entropy 与 DiT flow/noise</title>
+<style>
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 960px; margin: 40px auto; padding: 0 20px; color: #222; line-height: 1.65; }
+h1 { border-bottom: 3px solid #2563eb; padding-bottom: 8px; }
+h2 { color: #1e40af; margin-top: 36px; }
+.verdict { border-radius: 10px; padding: 16px 20px; margin: 14px 0; }
+.nogo { background: #fef2f2; border-left: 5px solid #dc2626; }
+.weak { background: #fffbeb; border-left: 5px solid #d97706; }
+.ok { background: #f0fdf4; border-left: 5px solid #16a34a; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid #d1d5db; padding: 6px 10px; text-align: right; }
+th { background: #f3f4f6; }
+td:first-child, th:first-child { text-align: left; }
+.bar-wrap { background:#e5e7eb; height:18px; border-radius:4px; position:relative; margin:2px 0; }
+.bar { background:#3b82f6; height:18px; border-radius:4px; }
+.note { color: #6b7280; font-size: 13px; }
+code { background:#f3f4f6; padding:1px 5px; border-radius:4px; font-size: 13px; }
+.ci { color:#6b7280; font-size:12px; }
+</style>
+</head>
+<body>
+<h1>H5 最终结论：attention entropy 与 DiT flow/noise 能否指示动作复杂度 / 计算收益？</h1>
+<p class="note">2026-07-22 · DreamZero-DROID (14B WAM) · 预注册确认性实验（protocol commit <code>5052501</code>，results commit <code>400b350</code>）</p>
+
+<h2>一句话结论</h2>
+<div class="verdict nogo"><b>Attention entropy：确认性 no-go。</b>action token 的注意力熵在整条轨迹上几乎恒定（0.553 ± 0.005），既不区分简单/复杂动作阶段，也不预测多算收益。“简单动作熵低、复杂动作熵高”在该模型上不成立。</div>
+<div class="verdict weak"><b>DiT 输出噪声/flow：方向性假设不成立，但发现一个真实弱信号。</b>“噪声越高→越确定→动作越简单”方向相反：flow 幅度与动作幅度<b>正</b>相关（自由移动幅度更大）。真正有信号的是<b>收敛速度</b>（flow delta，k=8 时 AUROC 0.685，CI [0.57, 0.80]）：还没收敛的 chunk 更可能从多算获益——但收益天花板太低，达不到部署门槛。</div>
+<div class="verdict ok"><b>统计上站得住：</b>benefit 标签本身被证明可学（oracle AUROC 0.76–0.85，CI 不含 0.5），因此上述负结果是<b>特异性失败</b>，不是样本不足的假阴性。这回应了 council 的全部质疑。</div>
+
+<h2>实验 1：attention entropy 跨 5 阶段（21 chunk，3 episode）</h2>
+<p>插桩 40 层 DiT 的 KV-cache 推理路径，只测 action-register query 对合法 context 的 normalized entropy（每 chunk 640 条记录 = 16 DiT call × 40 层）。</p>
+<table>
+<tr><th>阶段</th><th>chunk 数</th><th>entropy 均值</th><th>与 free_open 的差</th></tr>
+<tr><td>free_open（自由移动）</td><td>4</td><td>0.5533</td><td>—</td></tr>
+<tr><td>pre_close（接近）</td><td>3</td><td>0.5534</td><td>+0.0000</td></tr>
+<tr><td>closing（闭合）</td><td>3</td><td>0.5546</td><td>+0.0013</td></tr>
+<tr><td>hold（持握）</td><td>8</td><td>0.5551</td><td>+0.0018</td></tr>
+<tr><td>release（释放）</td><td>3</td><td>0.5526</td><td>−0.0008</td></tr>
+</table>
+<ul>
+<li>fine − free 差：<b>+0.00095</b>，95% CI <b>[−0.00148, +0.00373]</b>，含 0，不显著。</li>
+<li>效应量只有 chunk 内部离散度（0.136）的 <b>1/50</b>：即便方向真实也无实用区分度。</li>
+<li>与 benefit 的相关：rho = +0.08 / +0.04 / −0.13（k=2/4/8），p 全部 &gt; 0.58。</li>
+<li>混杂检查：与 KV 长度/anchor 无关（rho=0.02，p=0.92）。</li>
+</ul>
+
+<h2>实验 2：benefit 标签可学性 + flow/noise 信号的置信区间（84 chunk，12 episode）</h2>
+<p>benefit&gt;0.002 的 episode-bootstrap AUROC（k=8）：</p>
+<table>
+<tr><th>预测信号</th><th>AUROC</th><th>95% CI</th><th>判定</th></tr>
+<tr><td>oracle：当前误差（作弊上界）</td><td><b>0.762</b></td><td class="ci">[0.648, 0.938]</td><td>标签可学 ✔</td></tr>
+<tr><td><b>raw flow delta RMS（收敛速度）</b></td><td><b>0.685</b></td><td class="ci">[0.570, 0.802]</td><td>真实弱信号 ⚠</td></tr>
+<tr><td>raw 预测动作幅度</td><td>0.618</td><td class="ci">[0.491, 0.823]</td><td>边缘</td></tr>
+<tr><td>ridge 拟合 flow 组合</td><td>0.403</td><td class="ci">[0.256, 0.629]</td><td>过拟合失败 ✘</td></tr>
+<tr><td>GT 阶段 oracle</td><td>0.480</td><td class="ci">[0.319, 0.642]</td><td>阶段无信息 ✘</td></tr>
+</table>
+<p><b>但收益天花板极低</b>：benefit 均值在所有 k 均为<b>负</b>（多算平均反而更差）；正收益 chunk 仅 13%（11/84）；连续 benefit 的所有 Spearman CI（含 oracle）均横跨 0。flow delta 只在 7 个真实关节维上有信号（32 维全量稀释后消失），且与 prefix 收敛量是同一信号（AUROC 完全相同 0.685）。</p>
+
+<h2>对两个原始直觉的最终裁定</h2>
+<table>
+<tr><th>直觉</th><th>裁定</th><th>证据</th></tr>
+<tr><td>“简单动作 attention entropy 低、复杂动作高”</td><td><b>不成立</b></td><td>各阶段 entropy 平坦（差 &lt;0.5%，CI 含 0）</td></tr>
+<tr><td>“DiT 输出噪声越高→模型越确定→动作越简单”</td><td><b>方向相反</b></td><td>flow 幅度与动作幅度正相关（rho 0.91）；自由移动 flow 反而更大</td></tr>
+<tr><td>（衍生）“flow 还在变→值得继续算”</td><td><b>弱支持但不可部署</b></td><td>AUROC 0.685 [0.57,0.80]；收益均值为负、正例 13%</td></tr>
+</table>
+
+<h2>为什么可以停在这里</h2>
+<ul>
+<li><b>不是功效问题</b>：oracle 证明标签可学，负结果是信号真的弱/无。</li>
+<li><b>不是分析选择问题</b>：预测在结果前锁定（git 预注册），拟合与不拟合、二值与连续、多容差都报告了。</li>
+<li><b>机制解释自洽</b>：entropy 恒定说明该 WAM 的 action attention 模式与任务阶段解耦；flow delta ≈ prefix 收敛量，是“去噪没收敛”的直接量度，与“任务难度”无关。模型可以自信地收敛到错误动作，所以内部确定性信号预测不了误差收益。</li>
+</ul>
+
+<h2>下一步（如果还要继续这个方向）</h2>
+<ol>
+<li><b>闭环验证固定低预算</b>（2/4/8-call 成功率）——离线 MAE 已显示 1-2 call 不劣，最有价值的下一个实验。</li>
+<li>若坚持自适应 gate：用 flow-delta 做<b>保守 early-exit</b>（只在明显已收敛时提前停）在线回放，而不是“精细阶段多算”。</li>
+<li>不建议再扩离线样本重复本轮分析——信号上限已由 oracle 标定。</li>
+</ol>
+
+<p class="note">数据与代码：<code>research/action_chunk_compute/experiments/h4_attention_noise_diagnostics/</code>（protocol.md、results/benefit_rigor、results/attention_entropy_stages_21）；分析脚本在 <code>src/analyze_benefit_rigor.py</code>、<code>src/analyze_attention_entropy_stages.py</code>。</p>
+</body>
+</html>
