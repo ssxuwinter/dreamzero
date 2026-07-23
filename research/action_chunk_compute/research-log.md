@@ -39,6 +39,29 @@
 - pre-close 的 8→16 benefit 约 0.00003，其余阶段为负；没有“精细阶段更需要多算”的证据。
 - compute-benefit predictor 全部未过门槛，研究按预注册停止规则判为 no-go，不继续实现在线 action-aware scheduler。
 
+## 2026-07-22：H4 attention entropy 与 DiT flow/noise 新指标
+
+- 根据用户和师兄的新想法，新增 H4：检验 attention entropy 与 DiT 输出 noise/flow 强度是否能刻画动作简单/复杂，或预测继续计算收益。
+- 已锁定协议：`experiments/h4_attention_noise_diagnostics/protocol.md`。
+- 复用 H3 full-16 prefix trace 中已有 `action_flows` 做探索性 H4b 分析，新增脚本 `src/analyze_dit_flow_noise.py`。
+- H4b 结果：action-flow RMS 强烈跟随模型预测动作运动幅度，flow delta 强烈跟随 prefix 收敛量；但 episode-held-out compute-benefit 预测最佳 AUROC 只有 0.484，不支持作为多算 gate。
+- 新增 opt-in attention entropy 插桩：`TRACE_ATTENTION_ENTROPY=True` 时记录 action/query attention 的 normalized entropy 标量，并经 policy/server/trace runner 传出。
+- 用户提供 `image/` 下 3 个 episode 的三视角视频作为 attention entropy pilot 数据；新增 `src/run_attention_entropy_image_pilot.py`。
+- 运行服务前发现 `dream` 环境同时安装 GUI OpenCV 和 headless OpenCV，GUI 版缺 `libgthread-2.0.so.0`；已移除 `opencv-python` 并重装 `opencv-python-headless==4.11.0.86`，cv2 import 恢复。
+- 新启动服务还缺 `google/umt5-xxl` tokenizer 本地文件；权重目录有 T5/text encoder 权重，但 tokenizer 不在 DreamZero-DROID checkpoint 内。已通过 `HF_ENDPOINT=https://hf-mirror.com` 下载到 `/home/admin/.cache/google-umt5-xxl`，并用 `--tokenizer-path` 显式指定。
+- `image/` pilot 已跑通 3 个 episode，每个 chunk 680 条 entropy record；三个样本均为 free_open，mean entropy 约 0.620，说明链路可用但样本没有阶段多样性。
+- 之前 H2/H3 没遇到该问题，可能是当时服务已由外部启动或环境/缓存中已有 tokenizer；本轮从干净服务重启路径开始，因此暴露了 OpenCV 动态库、tokenizer cache 和 msgpack 序列化这些服务端初始化/诊断返回问题。
+
+## 2026-07-22（下午）：H5 确认性阶段
+
+- 按 council 意见锁定确认性协议（commit 5052501）：E1 = entropy 跨阶段（21 chunk，5 stage），E2 = benefit 标签可学性上界；预测在结果前写入 protocol.md。
+- E2 完成（`results/benefit_rigor/`）：oracle_current_error AUROC 0.76-0.85（CI 不含 0.5）→ 标签可学；raw `k8_dit_flow_delta_joint7_rms` AUROC 0.685 [0.57,0.80] → flow 收敛速度有真实弱信号；但 benefit 均值为负、正例仅 13%、连续 Spearman 全横跨 0 → 收益天花板低。
+- 交叉验证：该信号只在 joint7 维存在（all32 稀释后 0.515），与 `k8_prefix_joint_delta_mean` AUROC 完全相同（0.685）——flow delta 和 prefix 收敛量是同一信号的两种测量。
+- E1 第一次运行 OOM：entropy 探针把全 query×全 KV 分数矩阵一次性物化，chunk 越靠后 KV 越长（约 1.65 GiB 单次分配）。修复：只对 action-register 查询计算 + 按 8 head 分块累积。此修复改变语义（不再包含 image query），与首次 3-chunk pilot 的 0.620 不可直接对比，将全部重跑 21 chunk。
+- 后台运行脚本需显式 `PYTHONPATH=repo根`，否则 `eval_utils` 不可导入。
+- E1 完成（`results/attention_entropy_stages_21/`）：21/21 chunk 采集成功，每 chunk 640 条 record（16 DiT call × 40 层）。按阶段 entropy 几乎平坦（0.5526~0.5551）；fine−free 差 +0.00095，CI [−0.00148, +0.00373] 含 0；与 benefit/motion 的所有相关 p>0.44；无 KV 长度混杂（rho=0.02）。**H5a、H5b 均按预注册规则判 no-go。**
+- 三个 episode 内部 fine−free 方向一致为正但效应量仅为 chunk 内离散度的 1/50——方向或许真实但完全无实用区分度。
+
 ## 最终决策
 
 | 子命题 | 结论 | 后续 |

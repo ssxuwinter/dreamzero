@@ -73,6 +73,7 @@ def infer_trace(client: WebsocketClientPolicy, obs: dict[str, object]) -> tuple[
             response["normalized_prefix_actions"], dtype=np.float32
         ),
         "action_flows": np.asarray(response["action_flows"], dtype=np.float32),
+        "attention_entropy_trace": response.get("attention_entropy_trace", []),
     }
     expected = {
         "action": (24, 8),
@@ -128,6 +129,7 @@ def run_episode(
         prefix_actions: list[np.ndarray] = []
         normalized_prefix_actions: list[np.ndarray] = []
         action_flows: list[np.ndarray] = []
+        attention_entropy_traces: list[dict[str, object]] = []
         latencies: list[float] = []
 
         for chunk_index, phase_row in enumerate(phase_rows.itertuples(index=False)):
@@ -149,6 +151,13 @@ def run_episode(
             prefix_actions.append(trace["prefix_actions"])
             normalized_prefix_actions.append(trace["normalized_prefix_actions"])
             action_flows.append(trace["action_flows"])
+            attention_entropy_traces.append(
+                {
+                    "anchor": int(anchor),
+                    "chunk_index": int(chunk_index),
+                    "records": trace.get("attention_entropy_trace", []),
+                }
+            )
             latencies.append(latency)
             print(
                 f"episode={episode} chunk={chunk_index + 1}/{len(phase_rows)} "
@@ -174,6 +183,18 @@ def run_episode(
         action_flows=np.stack(action_flows),
         latencies=np.asarray(latencies, dtype=np.float64),
         initial_latency=np.asarray(initial_latency, dtype=np.float64),
+    )
+    entropy_path = output_dir / f"episode_{episode:06d}_attention_entropy.json"
+    entropy_path.write_text(
+        json.dumps(
+            {
+                "episode": episode,
+                "prompt": prompt,
+                "chunks": attention_entropy_traces,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
     )
     return {
         "episode": episode,

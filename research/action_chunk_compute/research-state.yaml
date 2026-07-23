@@ -38,6 +38,9 @@ hypotheses:
   - id: H4
     statement: 同次去噪轨迹中的 provisional-action 收敛量比物理动作幅度更能预测继续计算收益。
     status: rejected_on_current_metric
+  - id: H5
+    statement: attention entropy 与 DiT 输出 noise/flow 强度可能刻画动作复杂度并预测继续计算收益。
+    status: rejected_confirmatory
 decision_gates:
   phase_signal: >-
     episode 分组交叉验证中，joint+predicted-gripper+transition 相对
@@ -58,10 +61,19 @@ artifacts:
   gt_results: experiments/h1_gt_chunk_phase/results/confirmatory_1200
   static_results: experiments/h2_wam_static_compute/results/diagnostic_contiguous_12/analysis
   nested_results: experiments/h3_nested_provisional_compute/results/prefix_trace_12/analysis
+  h5_protocol: experiments/h4_attention_noise_diagnostics/protocol.md
+  h5_flow_noise_results: experiments/h4_attention_noise_diagnostics/results/flow_noise_existing_trace
+  h5_benefit_rigor: experiments/h4_attention_noise_diagnostics/results/benefit_rigor
+  h5_attention_entropy_pilot: experiments/h4_attention_noise_diagnostics/results/attention_entropy_image_pilot
+  h5_attention_entropy_confirmatory: experiments/h4_attention_noise_diagnostics/results/attention_entropy_stages_21
 outcome:
   phase_segmentation: go
   magnitude_or_acceleration_threshold: no_go
   phase_aware_more_compute_gate: no_go
   action_flow_compute_gate: no_go_on_offline_mae
+  dit_flow_noise_gate: no_go_weak_convergence_signal_auroc_0.69_below_deploy_bar
+  attention_entropy_gate: no_go_confirmatory_entropy_flat_across_stages
+  benefit_label_learnability: confirmed_by_oracle_auroc_0.76_to_0.85
   deployment: blocked_pending_closed_loop_validation
-next_action: 在仿真或真机闭环成功率上比较固定低预算与默认 8-call；在此之前不实现阶段感知多算 gate
+next_action: 两个新指标已到确认性结论（entropy 平坦 no-go；flow delta 有 0.69 弱信号但收益天花板低）。若继续，方向是闭环成功率验证固定低预算或以 flow-delta 做保守 early-exit 的在线回放，而非离线再扩样本
+updated_at: 2026-07-22
