@@ -751,6 +751,7 @@ class GrootSimPolicy(BaseGrootSimPolicy):
         video_pred = model_pred["video_pred"]
         normalized_action_prefix_trace = model_pred.get("action_prefix_trace")
         action_flow_trace = model_pred.get("action_flow_trace")
+        attention_entropy_trace = model_pred.get("attention_entropy_trace")
 
         model_time = time.perf_counter() - model_start_time
 
@@ -792,6 +793,9 @@ class GrootSimPolicy(BaseGrootSimPolicy):
                 flow_trace = flow_trace[0]
             batch.normalized_action_prefix_trace = normalized_trace
             batch.action_flow_trace = flow_trace
+
+        if attention_entropy_trace is not None:
+            batch.attention_entropy_trace = attention_entropy_trace
 
         # 5. Remove batch dimension if we added it
         if not is_batched:

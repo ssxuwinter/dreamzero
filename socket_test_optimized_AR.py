@@ -334,6 +334,10 @@ class ARDroidRoboarenaPolicy:
                 "normalized_prefix_actions": result_batch.normalized_action_prefix_trace,
                 "action_flows": result_batch.action_flow_trace,
             }
+            if "attention_entropy_trace" in result_batch:
+                response["attention_entropy_trace"] = self._convert_attention_entropy_trace(
+                    result_batch.attention_entropy_trace
+                )
         else:
             response = action
         
@@ -343,6 +347,36 @@ class ARDroidRoboarenaPolicy:
         
         return response
     
+    def _convert_attention_entropy_trace(self, trace) -> list[dict]:
+        def scalar(value):
+            if isinstance(value, np.ndarray):
+                if value.shape == ():
+                    return value.item()
+                return value.tolist()
+            if isinstance(value, np.generic):
+                return value.item()
+            return value
+
+        if isinstance(trace, Batch):
+            converted = trace.to_numpy()
+            if converted is not None:
+                trace = converted
+            keys = list(trace.keys())
+            if not keys:
+                return []
+            length = len(getattr(trace, keys[0]))
+            return [
+                {key: scalar(getattr(trace, key)[index]) for key in keys}
+                for index in range(length)
+            ]
+        if isinstance(trace, list):
+            return [
+                {key: scalar(value) for key, value in record.items()}
+                for record in trace
+                if isinstance(record, dict)
+            ]
+        return []
+
     def _reset_state(self, save_video: bool = True) -> None:
         """Internal method to reset policy state.
         

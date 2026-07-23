@@ -26,6 +26,57 @@ import torch.distributed as dist
 import os
 
 ENABLE_TENSORRT = os.getenv("ENABLE_TENSORRT", "False").lower() == "true"
+TRACE_ATTENTION_ENTROPY = os.getenv("TRACE_ATTENTION_ENTROPY", "False").lower() == "true"
+ATTENTION_ENTROPY_RECORDS: list[dict[str, float | int | str]] = []
+
+
+def reset_attention_entropy_records() -> None:
+    ATTENTION_ENTROPY_RECORDS.clear()
+
+
+def pop_attention_entropy_records() -> list[dict[str, float | int | str]]:
+    records = list(ATTENTION_ENTROPY_RECORDS)
+    ATTENTION_ENTROPY_RECORDS.clear()
+    return records
+
+
+def _record_attention_entropy(label: str, q: torch.Tensor, k: torch.Tensor) -> None:
+    if not TRACE_ATTENTION_ENTROPY:
+        return
+    if q.numel() == 0 or k.numel() == 0 or k.shape[1] <= 1:
+        return
+    with torch.no_grad():
+        # Chunk over heads to bound peak memory when the KV context is long.
+        num_heads = q.shape[2]
+        log_klen = math.log(k.shape[1])
+        scale = math.sqrt(q.shape[-1])
+        sums, sq_sums, mins, maxs = [], [], [], []
+        count = 0
+        for h0 in range(0, num_heads, 8):
+            qh = q[:, :, h0:h0 + 8].float()
+            kh = k[:, :, h0:h0 + 8].float()
+            scores = torch.einsum("bqhd,bkhd->bhqk", qh, kh) / scale
+            probs = torch.softmax(scores, dim=-1)
+            entropy = -(probs * torch.log(probs.clamp_min(1e-12))).sum(dim=-1) / log_klen
+            sums.append(entropy.sum())
+            sq_sums.append((entropy ** 2).sum())
+            count += entropy.numel()
+            mins.append(entropy.min())
+            maxs.append(entropy.max())
+            del scores, probs, entropy
+        mean = torch.stack(sums).sum() / count
+        variance = torch.clamp(torch.stack(sq_sums).sum() / count - mean ** 2, min=0.0)
+        ATTENTION_ENTROPY_RECORDS.append(
+            {
+                "label": label,
+                "q_len": int(q.shape[1]),
+                "k_len": int(k.shape[1]),
+                "mean": float(mean.detach().cpu()),
+                "std": float(variance.sqrt().detach().cpu()),
+                "min": float(torch.stack(mins).min().detach().cpu()),
+                "max": float(torch.stack(maxs).max().detach().cpu()),
+            }
+        )
 
 
 class CategorySpecificLinear(nn.Module):
@@ -779,6 +830,7 @@ class CausalWanSelfAttention(nn.Module):
                 noisy_state_v[:, state_start:state_end]
             ], dim=1)
             
+            _record_attention_entropy("noisy_action_block", q_block, k_context)
             output[:, action_start:action_end] = self.attn(q_block, k_context, v_context)
         
         return output
@@ -1073,10 +1125,16 @@ class CausalWanSelfAttention(nn.Module):
             new_v = new_v[:, -self.max_attention_size:]
 
             if action_register_length is not None:
+                attention_query = torch.cat([roped_query, roped_action_query], dim=1)
+                attention_key = torch.cat([new_k, roped_action_key], dim=1)
+                attention_value = torch.cat([new_v, action_v], dim=1)
+                # Entropy over action-register queries only: that is the hypothesis
+                # target, and it keeps the score matrix small on long KV contexts.
+                _record_attention_entropy("kv_action_register", roped_action_query, attention_key)
                 x = self.attn(
-                    torch.cat([roped_query, roped_action_query], dim=1),
-                    torch.cat([new_k, roped_action_key], dim=1),
-                    torch.cat([new_v, action_v], dim=1),
+                    attention_query,
+                    attention_key,
+                    attention_value,
                 )
             else:
                 x = self.attn(

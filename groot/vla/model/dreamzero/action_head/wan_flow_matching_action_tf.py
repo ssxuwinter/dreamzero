@@ -48,6 +48,10 @@ from groot.vla.model.dreamzero.modules.flow_match_scheduler import FlowMatchSche
 from groot.vla.model.dreamzero.modules.vram_management import enable_vram_management, AutoWrappedModule, AutoWrappedLinear
 from groot.vla.model.dreamzero.modules.wan_video_text_encoder import T5RelativeEmbedding, T5LayerNorm
 from groot.vla.model.dreamzero.modules.flow_unipc_multistep_scheduler import FlowUniPCMultistepScheduler
+from groot.vla.model.dreamzero.modules.wan_video_dit_action_casual_chunk import (
+    pop_attention_entropy_records,
+    reset_attention_entropy_records,
+)
 
 
 KVCacheType: TypeAlias = torch.Tensor
@@ -1098,6 +1102,7 @@ class WANPolicyHead(ActionHead):
 
     def lazy_joint_video_action(self, backbone_output: BatchFeature, action_input: BatchFeature, latent_video: torch.Tensor | None = None) -> BatchFeature:
         start_time = time.perf_counter()
+        reset_attention_entropy_records()
 
         # Tracking time taken on GPU for various operations.
         start_text_encoder_event = torch.cuda.Event(enable_timing=True)
@@ -1475,6 +1480,9 @@ class WANPolicyHead(ActionHead):
             "action_pred": latents_action,
             "video_pred": output.transpose(1, 2),
         }
+        attention_entropy_trace = pop_attention_entropy_records()
+        if attention_entropy_trace:
+            result["attention_entropy_trace"] = attention_entropy_trace
         if action_prefix_trace is not None:
             result["action_prefix_trace"] = action_prefix_trace
             result["action_flow_trace"] = torch.stack(action_flow_trace, dim=1)
